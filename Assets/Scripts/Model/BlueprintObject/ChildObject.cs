@@ -48,11 +48,14 @@ namespace Assets.Scripts.Model.BlueprintObject
             }
             var childMesh = gameObject.transform.GetChild(0);
             var scale = childMesh.transform.localScale;
-
             (scale.x, scale.y, scale.z) = (bounds.X, bounds.Z, bounds.Y);
 
             childMesh.transform.localScale = scale;
             childMesh.transform.localPosition = scale / 2;
+
+            var collider = gameObject.GetComponent<BoxCollider>();
+            collider.size = scale;
+            collider.center = scale / 2;
         }
 
         /// <summary>
@@ -68,65 +71,70 @@ namespace Assets.Scripts.Model.BlueprintObject
             this.xaxis = xaxis;
             this.zaxis = zaxis;
 
-            bool xpos = xaxis > 0;
-            bool zpos = zaxis > 0;
+            var xAbs = Math.Abs(xaxis);
+            var zAbs = Math.Abs(zaxis);
+            int xSign = xaxis > 0 ? 1 : -1;
+            int zSign = zaxis > 0 ? 1 : -1;
+
+            Vector3 right = new Vector3(xAbs == 1 ? xSign : 0, xAbs == 3 ? xSign : 0, xAbs == 2 ? xSign : 0);
+            Vector3 up = new Vector3(zAbs == 1 ? zSign : 0, zAbs == 3 ? zSign : 0, zAbs == 2 ? zSign : 0);
+            Vector3 forward = Vector3.Cross(right, up);
+
+            //int yaxis = (int)(forward.x * 1 + forward.y * 2 + forward.z * 3);
+
+            var rotation = gameObject.transform.rotation;
+            rotation.SetLookRotation(forward, up);
+
+            // todo: create vector3D based on xaxis and zaxis, then calculate 'yaxis'  vector3D and use that for forward in lookrotation
+            // get rid of switch case
             /*
-            int rotatex, rotatez;
             switch (Math.Abs(xaxis))
             {
                 case 1:
-                    baseLinkRotatex.Rotation = new AxisAngleRotation3D(new System.Windows.Media.Media3D.Vector3D(0, 0, xpos ? 0 : 1), 180);
-                    baseLinkMove.Children.Add(baseLinkRotatex);
                     switch (Math.Abs(zaxis))
                     {
                         case 1:
-                            MessageBox.Show("Incorrect rotationset found !");
+                            Debug.LogError($"Incorrect rotationset found !");
                             break;
                         case 2:
-                            baseLinkRotatez.Rotation = new AxisAngleRotation3D(new System.Windows.Media.Media3D.Vector3D(zpos ? -1 : 1, 0, 0), 90);
+                            rotation.SetLookRotation(new Vector3(-xpos, 0, 0), new Vector3(0, zpos, 0)); // ( forward (z) , up (y) )
                             break;
                         case 3:
-                            baseLinkRotatez.Rotation = new AxisAngleRotation3D(new System.Windows.Media.Media3D.Vector3D(zpos ? 0 : 1, 0, 0), 180);
+                            rotation.SetLookRotation(new Vector3( 0, 0, xpos), new Vector3(0, zpos, 0));
                             break;
                     }
-                    baseLinkMove.Children.Add(baseLinkRotatez);
                     break;
                 case 2:
-                    baseLinkRotatex.Rotation = new AxisAngleRotation3D(new System.Windows.Media.Media3D.Vector3D(0, 0, xpos ? 1 : -1), 90);
-                    baseLinkMove.Children.Add(baseLinkRotatex);
                     switch (Math.Abs(zaxis))
                     {
                         case 1:
-                            baseLinkRotatez.Rotation = new AxisAngleRotation3D(new System.Windows.Media.Media3D.Vector3D(0, zpos ? 1 : -1, 0), 90);
+                            rotation.SetLookRotation(new Vector3(0, xpos, 0), new Vector3(zpos, 0, 0));
                             break;
                         case 2:
-                            MessageBox.Show("Incorrect rotationset found !");
+                            Debug.LogError($"Incorrect rotationset found !");
                             break;
                         case 3:
-                            baseLinkRotatez.Rotation = new AxisAngleRotation3D(new System.Windows.Media.Media3D.Vector3D(0, zpos ? 0 : 1, 0), 180);
+                            rotation.SetLookRotation(new Vector3(0, xpos, 0), new Vector3(0, 0, zpos));
                             break;
                     }
-                    baseLinkMove.Children.Add(baseLinkRotatez);
                     break;
                 case 3:
-                    baseLinkRotatex.Rotation = new AxisAngleRotation3D(new System.Windows.Media.Media3D.Vector3D(0, xpos ? -1 : 1, 0), 90);
-                    baseLinkMove.Children.Add(baseLinkRotatex);
                     switch (Math.Abs(zaxis))
                     {
                         case 1:
-                            baseLinkRotatez.Rotation = new AxisAngleRotation3D(new System.Windows.Media.Media3D.Vector3D(0, 0, (zpos == xpos) ? 1 : 0), 180);
+                            rotation.SetLookRotation(new Vector3(0, 0, xpos), new Vector3(zpos, 0, 0));
                             break;
                         case 2:
-                            baseLinkRotatez.Rotation = new AxisAngleRotation3D(new System.Windows.Media.Media3D.Vector3D(0, 0, (zpos == xpos) ? -1 : 1), 90);
+                            rotation.SetLookRotation(new Vector3(0, 0, xpos), new Vector3(0, zpos, 0));
                             break;
                         case 3:
-                            MessageBox.Show("Incorrect rotationset found !");
+                            Debug.LogError($"Incorrect rotationset found !");
                             break;
                     }
-                    baseLinkMove.Children.Add(baseLinkRotatez);
                     break;
             } //rotations translate!
             //*/
+            gameObject.transform.rotation = rotation;
             CalculateRotatedBounds();
         }
 

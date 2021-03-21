@@ -41,6 +41,10 @@ namespace Assets.Scripts.Model.Shapes
             if (this.bounds == default)
                 this.CalculateBounds();
 
+            var collider = gameObject.GetComponent<BoxCollider>();
+            collider.size = this.bounds;
+            collider.center = this.bounds / 2;
+
             for (int i = 0; i < subMeshes.Length; i++)
             {
                 var subMesh = subMeshes[i];
@@ -60,10 +64,10 @@ namespace Assets.Scripts.Model.Shapes
         private void CalculateBounds()
         {
             if (partData.Box != null)
-                this.bounds = new Vector3(partData.Box.X, partData.Box.Y, partData.Box.Z);
+                this.bounds = new Vector3(partData.Box.X, partData.Box.Z, partData.Box.Y);
             if (partData.Hull != null)
             {
-                this.bounds = new Vector3(partData.Hull.X, partData.Hull.Y, partData.Hull.Z);
+                this.bounds = new Vector3(partData.Hull.X, partData.Hull.Z, partData.Hull.Y);
             }
             if (partData.Cylinder != null)
             {
@@ -74,10 +78,10 @@ namespace Assets.Scripts.Model.Shapes
                         this.bounds = new Vector3(cylinder.Depth, cylinder.Diameter, cylinder.Diameter);
                         break;
                     case "y":
-                        this.bounds = new Vector3(cylinder.Diameter, cylinder.Depth, cylinder.Diameter);
+                        this.bounds = new Vector3(cylinder.Diameter, cylinder.Diameter, cylinder.Depth);
                         break;
                     case "z":
-                        this.bounds = new Vector3(cylinder.Diameter, cylinder.Diameter, cylinder.Depth);
+                        this.bounds = new Vector3(cylinder.Diameter, cylinder.Depth, cylinder.Diameter);
                         break;
                 }
             }
