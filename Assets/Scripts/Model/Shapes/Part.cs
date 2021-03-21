@@ -22,6 +22,8 @@ namespace Assets.Scripts.Model.Shapes
         public UnityEngine.Mesh[] pose1;
         public UnityEngine.Mesh[] pose2;
 
+        public Vector3 bounds;
+
         public Part(PartData partData, ModContext mod = null) : base(mod)
         {
             this.partData = partData;
@@ -36,15 +38,49 @@ namespace Assets.Scripts.Model.Shapes
             if (this.subMeshes == null)
                 LoadMesh();
 
+            if (this.bounds == default)
+                this.CalculateBounds();
+
             for (int i = 0; i < subMeshes.Length; i++)
             {
                 var subMesh = subMeshes[i];
                 GameObject subMeshGameObject = UnityEngine.Object.Instantiate(Constants.Instance.SubMesh, gameObject.transform);
                 subMeshGameObject.GetComponent<MeshFilter>().mesh = subMesh;
-                subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.material);
+
+                subMeshGameObject.transform.position = this.bounds / 2;
+
+                // todo: edit box collider
+
+                //subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.material);
                 // todo: CORRECT to the right material based on partdata
             }
             return gameObject;
+        }
+
+        private void CalculateBounds()
+        {
+            if (partData.Box != null)
+                this.bounds = new Vector3(partData.Box.X, partData.Box.Y, partData.Box.Z);
+            if (partData.Hull != null)
+            {
+                this.bounds = new Vector3(partData.Hull.X, partData.Hull.Y, partData.Hull.Z);
+            }
+            if (partData.Cylinder != null)
+            {
+                var cylinder = partData.Cylinder;
+                switch (cylinder.Axis.ToLower())
+                {
+                    case "x":
+                        this.bounds = new Vector3(cylinder.Depth, cylinder.Diameter, cylinder.Diameter);
+                        break;
+                    case "y":
+                        this.bounds = new Vector3(cylinder.Diameter, cylinder.Depth, cylinder.Diameter);
+                        break;
+                    case "z":
+                        this.bounds = new Vector3(cylinder.Diameter, cylinder.Diameter, cylinder.Depth);
+                        break;
+                }
+            }
         }
 
         public override void ApplyTextures(GameObject gameObject)
@@ -177,9 +213,9 @@ namespace Assets.Scripts.Model.Shapes
         {
             UnityEngine.Mesh unityMesh = new UnityEngine.Mesh
             {
-                vertices = mesh.Vertices.Select(v => new Vector3(-v.X, v.Y, v.Z)).ToArray(),
+                vertices = mesh.Vertices.Select(v => new Vector3(v.X, v.Z, v.Y)).ToArray(), // -x, y, z
                 triangles = GetTriangles(mesh.Faces).ToArray(),
-                normals = mesh.Normals?.Select(n => new Vector3(-n.X, n.Y, n.Z)).ToArray(), 
+                normals = mesh.Normals?.Select(n => new Vector3(n.X, n.Z, n.Y)).ToArray(),  // -x, y, z
                 //tangents = mesh.Tangents?.Select(t => new Vector4(t.X, t.Y, t.Z, 1)).ToArray()
             };
             for (int i = 0; i < mesh.TextureCoordinateChannelCount && i < 8; i++)

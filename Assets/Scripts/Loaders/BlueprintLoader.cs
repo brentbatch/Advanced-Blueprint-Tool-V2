@@ -215,7 +215,7 @@ namespace Assets.Scripts.Loaders
             */
             shape.ApplyTextures(childGameObject);
             childObject.SetBlueprintPosition(child.Pos);
-           // childObject.SetBlueprintRotation(child.Xaxis, child.Zaxis);
+            childObject.SetBlueprintRotation(child.Xaxis, child.Zaxis);
 
             if (shape is Block && child.Bounds != null)
             {

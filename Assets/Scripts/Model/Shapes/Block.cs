@@ -25,6 +25,16 @@ namespace Assets.Scripts.Model.Shapes
         {
             var gameObject = UnityEngine.Object.Instantiate(Constants.Instance.Block, parent);
             gameObject.GetComponent<ChildObject>().shape = this;
+
+            GameObject subMeshGameObject = UnityEngine.Object.Instantiate(Constants.Instance.Cube, gameObject.transform);
+
+            var pos = subMeshGameObject.transform.position;
+            (pos.x, pos.y, pos.z) = (0.5f, 0.5f, 0.5f);
+            subMeshGameObject.transform.position = pos;
+
+            // todo: box collider edit
+
+            //subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.material);
             return gameObject;
         }
 
@@ -34,7 +44,7 @@ namespace Assets.Scripts.Model.Shapes
             if (this.materialInfoList == null)
                 LoadTextures();
 
-            var material = gameObject.GetComponent<MeshRenderer>().material;
+            var material = gameObject.GetComponentInChildren<MeshRenderer>().material;
             material.SetTexture("_MainTex", materialInfoList[0].diffuse);
             material.SetTexture("_NorTex", materialInfoList[0].normal);
             //material.SetTexture("_AsgTex", materialInfoList[0].asg);
@@ -66,7 +76,7 @@ namespace Assets.Scripts.Model.Shapes
                     {
                         material = "DifAsgNor",
                         diffuse = LoadTexture(dif),
-                        //normal = LoadTexture(nor)
+                        normal = LoadTexture(nor)
                     }
                 };
             }
