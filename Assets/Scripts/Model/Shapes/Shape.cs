@@ -42,34 +42,5 @@ namespace Assets.Scripts.Model.Shapes
         public abstract void LoadMesh();
         public abstract void LoadTextures();
 
-        /// <summary>
-        /// load a texture from a certain path
-        /// </summary>
-        /// <param name="resolvedFilePath"></param>
-        /// <returns>Texture2D</returns>
-        public Texture2D LoadTexture(string resolvedFilePath)
-        {
-            Debug.LogError($"DEPRECATED");
-            if (!File.Exists(resolvedFilePath))
-            {
-                throw new FileNotFoundException(resolvedFilePath);
-            }
-            if (Path.GetExtension(resolvedFilePath) == ".tga" && true)
-            {
-                var tex = TgaDecoder.TgaDecoder.FromFile(resolvedFilePath);
-                return tex;
-            }
-            else
-            {
-                Texture2D tex = new Texture2D(2, 2);
-                if (!tex.LoadImage(File.ReadAllBytes(resolvedFilePath)))
-                {
-                    Debug.LogError($"Was not able to load texture {resolvedFilePath}");
-                }
-                tex.Compress(false);
-                return tex;
-            }
-        }
-
     }
 }

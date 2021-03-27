@@ -37,6 +37,8 @@ namespace Assets.Scripts.Model.Shapes
             if (blockData.Glass == true)
             {
                 subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassBlockMaterial);
+                subMeshGameObject.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                subMeshGameObject.GetComponent<Renderer>().receiveShadows = false;
             }
             subMeshGameObject.GetComponent<MeshRenderer>().material.SetFloat("_Tiling", 1f / blockData.Tiling);
             return gameObject;
@@ -50,14 +52,25 @@ namespace Assets.Scripts.Model.Shapes
 
             var material = gameObject.GetComponentInChildren<MeshRenderer>().material;
 
-            TextureLoader.Instance.GetTextureAndDoAction(
-                TextureInfoList[0].diffuse,
-                (Texture2D tex) => material.SetTexture("_MainTex", tex));
-
-            TextureLoader.Instance.GetTextureAndDoAction(
-                TextureInfoList[0].normal,
-                (Texture2D tex) => material.SetTexture("_NorTex", tex));
-            //material.SetTexture("_AsgTex", materialInfoList[0].asg);
+            var texInfo = TextureInfoList[0];
+            if (texInfo.diffuse != null)
+            {
+                TextureLoader.Instance.GetTextureAndDoAction(
+                    TextureInfoList[0].diffuse,
+                    (Texture2D tex) => material.SetTexture("_MainTex", tex));
+            }
+            if (texInfo.normal != null)
+            {
+                TextureLoader.Instance.GetTextureAndDoAction(
+                    TextureInfoList[0].normal,
+                    (Texture2D tex) => material.SetTexture("_NorTex", tex));
+            }
+            if (texInfo.asg != null)
+            {
+                TextureLoader.Instance.GetTextureAndDoAction(
+                    TextureInfoList[0].asg,
+                    (Texture2D tex) => material.SetTexture("_AsgTex", tex));
+            }
         }
 
         public override void LoadMesh()
@@ -71,20 +84,23 @@ namespace Assets.Scripts.Model.Shapes
         {
             try
             {
-                var transparanttga = PathResolver.ResolvePath("$GAME_DATA/Textures/transparent.tga", mod?.ModFolderPath);
-                var nonortga = PathResolver.ResolvePath("$GAME_DATA/Textures/nonor_nor.tga", mod?.ModFolderPath);
+                //var transparanttga = PathResolver.ResolvePath("$GAME_DATA/Textures/transparent.tga", mod?.ModFolderPath);
+                //var nonortga = PathResolver.ResolvePath("$GAME_DATA/Textures/nonor_nor.tga", mod?.ModFolderPath);
 
                 string dif = PathResolver.ResolvePath(blockData.Dif, mod?.ModFolderPath);
+                string asg = PathResolver.ResolvePath(blockData.Asg, mod?.ModFolderPath);
                 string nor = PathResolver.ResolvePath(blockData.Nor, mod?.ModFolderPath);
 
-                if (!File.Exists(dif)) dif = transparanttga;
-                if (!File.Exists(nor)) nor = nonortga;
+                if (!File.Exists(dif)) dif = null; //transparanttga;
+                if (!File.Exists(asg)) asg = null; //transparanttga;
+                if (!File.Exists(nor)) nor = null; //nonortga;
 
                 TextureInfoList = new List<TextureInfo>()
                 {
                     new TextureInfo()
                     {
                         diffuse = dif,
+                        asg = asg,
                         normal = nor
                     }
                 };
