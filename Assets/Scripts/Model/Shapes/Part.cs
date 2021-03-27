@@ -16,6 +16,8 @@ namespace Assets.Scripts.Model.Shapes
 {
     public class Part : Shape
     {
+        private static AssimpContext assimpImporter = new AssimpContext();
+
         protected PartData partData;
 
         public UnityEngine.Mesh[] pose0;
@@ -29,6 +31,12 @@ namespace Assets.Scripts.Model.Shapes
         {
             this.partData = partData;
             this.partData.LoadRenderable(mod?.ModFolderPath); // load json file
+
+            //importer.SetConfig(new Assimp.Configs.MeshVertexLimitConfig(60000));
+            //importer.SetConfig(new Assimp.Configs.MeshTriangleLimitConfig(60000));
+            //importer.SetConfig(new Assimp.Configs.RemoveDegeneratePrimitivesConfig(true));
+            //importer.SetConfig(new Assimp.Configs.SortByPrimitiveTypeConfig(Assimp.PrimitiveType.Line | Assimp.PrimitiveType.Point));
+            //Assimp.PostProcessSteps postProcessSteps = Assimp.PostProcessPreset.TargetRealTimeMaximumQuality | Assimp.PostProcessSteps.MakeLeftHanded | Assimp.PostProcessSteps.FlipWindingOrder;
         }
 
         public override GameObject Instantiate(Transform parent)
@@ -54,12 +62,10 @@ namespace Assets.Scripts.Model.Shapes
 
                 subMeshGameObject.transform.position = this.bounds / 2;
 
-                // todo: edit box collider
                 if ( materials[i % materials.Length].ToLower().Contains("glass"))
                 {
                     subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassPartMaterial);
                 }
-                //subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.material);
             }
             return gameObject;
         }
@@ -122,7 +128,7 @@ namespace Assets.Scripts.Model.Shapes
             {
                 var lod = partData.Renderable.LodList.First();
 
-                Scene meshScene = LoadScene(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
+                Scene meshScene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
                 this.subMeshes = meshScene.Meshes.Select(mesh => ConvertMesh(mesh)).ToArray();
 
 
@@ -137,17 +143,17 @@ namespace Assets.Scripts.Model.Shapes
 
                 if (lod.Pose0 != null && false)
                 {
-                    Scene pose0Scene = LoadScene(PathResolver.ResolvePath(lod.Pose0, this.mod?.ModFolderPath));
+                    Scene pose0Scene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Pose0, this.mod?.ModFolderPath));
                     this.pose0 = pose0Scene.Meshes.Select(mesh => ConvertMesh(mesh)).ToArray();
                 }
                 if (lod.Pose1 != null && false)
                 {
-                    Scene pose1Scene = LoadScene(PathResolver.ResolvePath(lod.Pose1, this.mod?.ModFolderPath));
+                    Scene pose1Scene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Pose1, this.mod?.ModFolderPath));
                     this.pose1 = pose1Scene.Meshes.Select(mesh => ConvertMesh(mesh)).ToArray();
                 }
                 if (lod.Pose2 != null && false)
                 {
-                    Scene pose2Scene = LoadScene(PathResolver.ResolvePath(lod.Pose2, this.mod?.ModFolderPath));
+                    Scene pose2Scene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Pose2, this.mod?.ModFolderPath));
                     this.pose2 = pose2Scene.Meshes.Select(mesh => ConvertMesh(mesh)).ToArray();
                 }
             }
@@ -164,7 +170,7 @@ namespace Assets.Scripts.Model.Shapes
             try
             {
                 var lod = partData.Renderable.LodList.First();
-                Scene meshScene = LoadScene(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
+                Scene meshScene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
 
                 var transparanttga = PathResolver.ResolvePath("$GAME_DATA/Textures/transparent.tga");
                 var nonortga = PathResolver.ResolvePath("$GAME_DATA/Textures/nonor_nor.tga");
@@ -175,7 +181,6 @@ namespace Assets.Scripts.Model.Shapes
                 {
                     foreach (SubMesh subMesh in lod.SubMeshList)
                     {
-                        Debug.Log(subMesh.Material);
                         string dif = subMesh.TextureList.Count > 0 ? PathResolver.ResolvePath(subMesh.TextureList[0], mod?.ModFolderPath) : transparanttga;
                         string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : nonortga;
 
@@ -215,20 +220,6 @@ namespace Assets.Scripts.Model.Shapes
                 Debug.LogError($"Failed loading textures for part {partData.Uuid}\nError: {e} \nTrace: {StackTraceUtility.ExtractStringFromException(e)}");
 
             }
-        }
-
-
-        protected Scene LoadScene(string meshPath)
-        {
-            //importer.SetConfig(new Assimp.Configs.MeshVertexLimitConfig(60000));
-            //importer.SetConfig(new Assimp.Configs.MeshTriangleLimitConfig(60000));
-            //importer.SetConfig(new Assimp.Configs.RemoveDegeneratePrimitivesConfig(true));
-            //importer.SetConfig(new Assimp.Configs.SortByPrimitiveTypeConfig(Assimp.PrimitiveType.Line | Assimp.PrimitiveType.Point));
-            //Assimp.PostProcessSteps postProcessSteps = Assimp.PostProcessPreset.TargetRealTimeMaximumQuality | Assimp.PostProcessSteps.MakeLeftHanded | Assimp.PostProcessSteps.FlipWindingOrder;
-
-            Scene scene = PartLoader.importer.ImportFile(meshPath);
-
-            return scene;
         }
 
         protected UnityEngine.Mesh ConvertMesh(Assimp.Mesh mesh)
