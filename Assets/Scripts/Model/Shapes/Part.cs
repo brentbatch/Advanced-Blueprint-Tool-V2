@@ -65,6 +65,8 @@ namespace Assets.Scripts.Model.Shapes
                 if ( materials[i % materials.Length].ToLower().Contains("glass"))
                 {
                     subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassPartMaterial);
+                    subMeshGameObject.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    subMeshGameObject.GetComponent<Renderer>().receiveShadows = false;
                 }
             }
             return gameObject;
@@ -107,14 +109,25 @@ namespace Assets.Scripts.Model.Shapes
                 var material = meshRenderers[i].material;
                 int index = i % TextureInfoList.Count;
 
-                TextureLoader.Instance.GetTextureAndDoAction(
-                    TextureInfoList[index].diffuse,
-                    (Texture2D tex) => material.SetTexture("_MainTex", tex));
-
-                TextureLoader.Instance.GetTextureAndDoAction(
-                    TextureInfoList[index].normal,
-                    (Texture2D tex) => material.SetTexture("_NorTex", tex));
-                 //material.SetTexture("_AsgTex", materialInfoList[index].asg);
+                var texInfo = TextureInfoList[index];
+                if (texInfo.diffuse != null)
+                {
+                    TextureLoader.Instance.GetTextureAndDoAction(
+                        texInfo.diffuse,
+                        (Texture2D tex) => material.SetTexture("_MainTex", tex));
+                }
+                if (texInfo.normal != null)
+                {
+                    TextureLoader.Instance.GetTextureAndDoAction(
+                        texInfo.normal,
+                        (Texture2D tex) => material.SetTexture("_NorTex", tex));
+                }
+                if (texInfo.asg != null)
+                {
+                    TextureLoader.Instance.GetTextureAndDoAction(
+                        texInfo.asg,
+                        (Texture2D tex) => material.SetTexture("_AsgTex", tex));
+                }
             }
         }
 
@@ -172,8 +185,8 @@ namespace Assets.Scripts.Model.Shapes
                 var lod = partData.Renderable.LodList.First();
                 Scene meshScene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
 
-                var transparanttga = PathResolver.ResolvePath("$GAME_DATA/Textures/transparent.tga");
-                var nonortga = PathResolver.ResolvePath("$GAME_DATA/Textures/nonor_nor.tga");
+                //var transparanttga = PathResolver.ResolvePath("$GAME_DATA/Textures/transparent.tga");
+                //var nonortga = PathResolver.ResolvePath("$GAME_DATA/Textures/nonor_nor.tga");
 
                 this.TextureInfoList = new List<TextureInfo>();
                 
@@ -181,15 +194,18 @@ namespace Assets.Scripts.Model.Shapes
                 {
                     foreach (SubMesh subMesh in lod.SubMeshList)
                     {
-                        string dif = subMesh.TextureList.Count > 0 ? PathResolver.ResolvePath(subMesh.TextureList[0], mod?.ModFolderPath) : transparanttga;
-                        string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : nonortga;
+                        string dif = subMesh.TextureList.Count > 0 ? PathResolver.ResolvePath(subMesh.TextureList[0], mod?.ModFolderPath) : null;// : transparanttga;
+                        string asg = subMesh.TextureList.Count > 1 ? PathResolver.ResolvePath(subMesh.TextureList[1], mod?.ModFolderPath) : null;// : transparanttga;
+                        string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : null;// : nonortga;
 
-                        if (!File.Exists(dif)) dif = transparanttga;
-                        if (!File.Exists(nor)) nor = nonortga;
+                        if (!File.Exists(dif)) dif = null; //transparanttga;
+                        if (!File.Exists(asg)) dif = null; //transparanttga;
+                        if (!File.Exists(nor)) nor = null; //nonortga;
 
                         TextureInfoList.Add(new TextureInfo()
                         {
                             diffuse = dif,
+                            asg = asg,
                             normal = nor
                         });
                     }
@@ -200,15 +216,18 @@ namespace Assets.Scripts.Model.Shapes
                     {
                         if (lod.SubMeshMap.TryGetValue(material.Name, out SubMesh subMesh))
                         {
-                            string dif = subMesh.TextureList.Count > 0 ? PathResolver.ResolvePath(subMesh.TextureList[0], mod?.ModFolderPath) : transparanttga;
-                            string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : nonortga;
+                            string dif = subMesh.TextureList.Count > 0 ? PathResolver.ResolvePath(subMesh.TextureList[0], mod?.ModFolderPath) : null;// : transparanttga;
+                            string asg = subMesh.TextureList.Count > 1 ? PathResolver.ResolvePath(subMesh.TextureList[1], mod?.ModFolderPath) : null;// : transparanttga;
+                            string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : null;// : nonortga;
 
-                            if (!File.Exists(dif)) dif = transparanttga;
-                            if (!File.Exists(nor)) nor = nonortga;
+                            if (!File.Exists(dif)) dif = null; //transparanttga;
+                            if (!File.Exists(asg)) dif = null; //transparanttga;
+                            if (!File.Exists(nor)) nor = null; //nonortga;
 
                             TextureInfoList.Add(new TextureInfo()
                             {
                                 diffuse = dif,
+                                asg = asg,
                                 normal = nor
                             });
                         }

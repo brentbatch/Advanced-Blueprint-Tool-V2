@@ -33,10 +33,6 @@ namespace Assets.Scripts.Loaders
 
         private static readonly Dictionary<string, Coroutine> loadBlueprintsCoroutine = new Dictionary<string, Coroutine>();
 
-        private static readonly Queue<Action> loadTextureActions = new Queue<Action>();
-
-        // todo: temp static cache in Part class of the loaded mesh & textures, when another uuid found, instantiate from the list
-
         private void Start()
         {
             StartLoadBlueprints();
@@ -114,15 +110,6 @@ namespace Assets.Scripts.Loaders
                     Debug.LogError($"Error while refreshing blueprints: {e}");
                 }
                 yield return new WaitForSeconds(10f);
-            }
-        }
-
-        IEnumerator DelayedLoadTextures()
-        {
-            while(true) // TODO: somehow make this shit threaded
-            {
-                yield return new WaitUntil(() => loadTextureActions.Count > 0);
-                loadTextureActions.Dequeue().Invoke();
             }
         }
 
@@ -204,6 +191,7 @@ namespace Assets.Scripts.Loaders
             {
                 Debug.LogError(e);
             }
+            throw new NotImplementedException();
         }
 
         private ChildObject CreateChildObject(Child child, GameObject parent)
