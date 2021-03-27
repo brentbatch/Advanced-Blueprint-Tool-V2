@@ -18,6 +18,12 @@ namespace Assets.Scripts.Unity
         public GameObject Joint;
         public GameObject SubMesh;
 
+        public UnityEngine.Material partMaterial;
+        public UnityEngine.Material glassPartMaterial;
+
+        public UnityEngine.Material blockMaterial;
+        public UnityEngine.Material glassBlockMaterial;
+
         public bool potatoMode = false;
 
 

@@ -55,12 +55,11 @@ namespace Assets.Scripts.Model.Shapes
                 subMeshGameObject.transform.position = this.bounds / 2;
 
                 // todo: edit box collider
-                if ( materials[i].ToLower().Contains("glass"))
+                if ( materials[i % materials.Length].ToLower().Contains("glass"))
                 {
-                    subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.glassMaterial);
+                    subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassPartMaterial);
                 }
                 //subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.material);
-                // todo: CORRECT to the right material based on partdata
             }
             return gameObject;
         }

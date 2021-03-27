@@ -36,8 +36,9 @@ namespace Assets.Scripts.Model.Shapes
             // todo: box collider edit
             if (blockData.Glass == true)
             {
-                subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.glassMaterial);
+                subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassBlockMaterial);
             }
+            subMeshGameObject.GetComponent<MeshRenderer>().material.SetFloat("_Tiling", 1f / blockData.Tiling);
             return gameObject;
         }
 
