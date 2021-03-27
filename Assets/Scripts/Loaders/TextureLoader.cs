@@ -40,7 +40,7 @@ namespace Assets.Scripts.Loaders
             if (loadedTextures.TryGetValue(texturePath, out Texture2D tex))
             {
                 action(tex);
-                return true; // executed;
+                return true;
             }
             else
             {
@@ -61,7 +61,7 @@ namespace Assets.Scripts.Loaders
             }
         }
 
-        IEnumerator DoWhenLoaded((string, Action<Texture2D> ) loadTextureAction)
+        IEnumerator DoWhenLoaded((string, Action<Texture2D>) loadTextureAction)
         {
             (string texturePath, Action<Texture2D> action) = loadTextureAction;
 
