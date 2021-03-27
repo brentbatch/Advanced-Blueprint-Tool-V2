@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Assets.Scripts.Model.Shapes
+namespace Assets.Scripts.Model.Game
 {
     public class Block : Shape
     {
@@ -33,7 +33,6 @@ namespace Assets.Scripts.Model.Shapes
             (pos.x, pos.y, pos.z) = (0.5f, 0.5f, 0.5f);
             subMeshGameObject.transform.position = pos;
 
-            // todo: box collider edit
             if (blockData.Glass == true)
             {
                 subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassBlockMaterial);

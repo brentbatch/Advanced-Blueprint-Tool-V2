@@ -1,6 +1,6 @@
 ﻿using Assets.Scripts.Loaders;
 using Assets.Scripts.Model.Data;
-using Assets.Scripts.Model.Shapes;
+using Assets.Scripts.Model.Game;
 using System;
 using System.Collections.Generic;
 using System.Linq;

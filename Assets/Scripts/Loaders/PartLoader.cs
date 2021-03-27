@@ -11,7 +11,7 @@ using System.Collections;
 using Newtonsoft.Json;
 using Assets.Scripts.Model.Data;
 using System.Collections.Concurrent;
-using Assets.Scripts.Model.Shapes;
+using Assets.Scripts.Model.Game;
 using Assets.Scripts.Context;
 using Joint = Assets.Scripts.Model.Data.Joint;
 using System.Threading;
