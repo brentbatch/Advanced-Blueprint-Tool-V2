@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Context;
+using Assets.Scripts.Loaders;
 using Assets.Scripts.Model.BlueprintObject;
 using Assets.Scripts.Model.Data;
 using Assets.Scripts.Unity;
@@ -33,20 +34,28 @@ namespace Assets.Scripts.Model.Shapes
             subMeshGameObject.transform.position = pos;
 
             // todo: box collider edit
-
-            //subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.material);
+            if (blockData.Glass == true)
+            {
+                subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.glassMaterial);
+            }
             return gameObject;
         }
 
 
         public override void ApplyTextures(GameObject gameObject)
         {
-            if (this.materialInfoList == null)
+            if (this.TextureInfoList == null)
                 LoadTextures();
 
             var material = gameObject.GetComponentInChildren<MeshRenderer>().material;
-            material.SetTexture("_MainTex", materialInfoList[0].diffuse);
-            material.SetTexture("_NorTex", materialInfoList[0].normal);
+
+            TextureLoader.Instance.GetTextureAndDoAction(
+                TextureInfoList[0].diffuse,
+                (Texture2D tex) => material.SetTexture("_MainTex", tex));
+
+            TextureLoader.Instance.GetTextureAndDoAction(
+                TextureInfoList[0].normal,
+                (Texture2D tex) => material.SetTexture("_NorTex", tex));
             //material.SetTexture("_AsgTex", materialInfoList[0].asg);
         }
 
@@ -70,13 +79,12 @@ namespace Assets.Scripts.Model.Shapes
                 if (!File.Exists(dif)) dif = transparanttga;
                 if (!File.Exists(nor)) nor = nonortga;
 
-                materialInfoList = new List<MaterialInfo>()
+                TextureInfoList = new List<TextureInfo>()
                 {
-                    new MaterialInfo()
+                    new TextureInfo()
                     {
-                        material = "DifAsgNor",
-                        diffuse = LoadTexture(dif),
-                        normal = LoadTexture(nor)
+                        diffuse = dif,
+                        normal = nor
                     }
                 };
             }
