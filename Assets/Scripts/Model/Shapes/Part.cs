@@ -21,6 +21,7 @@ namespace Assets.Scripts.Model.Shapes
         public UnityEngine.Mesh[] pose0;
         public UnityEngine.Mesh[] pose1;
         public UnityEngine.Mesh[] pose2;
+        public string[] materials;
 
         public Vector3 bounds;
 
@@ -54,7 +55,10 @@ namespace Assets.Scripts.Model.Shapes
                 subMeshGameObject.transform.position = this.bounds / 2;
 
                 // todo: edit box collider
-
+                if ( materials[i].ToLower().Contains("glass"))
+                {
+                    subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.glassMaterial);
+                }
                 //subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.material);
                 // todo: CORRECT to the right material based on partdata
             }
@@ -89,16 +93,22 @@ namespace Assets.Scripts.Model.Shapes
 
         public override void ApplyTextures(GameObject gameObject)
         {
-            if (materialInfoList == null)
+            if (TextureInfoList == null)
                 LoadTextures();
 
             MeshRenderer[] meshRenderers = gameObject.GetComponentsInChildren<MeshRenderer>();
             for (int i = 0; i < subMeshes.Length && i < meshRenderers.Length; i++)
             {
                 var material = meshRenderers[i].material;
-                int index = i % materialInfoList.Count;
-                material.SetTexture("_MainTex", materialInfoList[index].diffuse);
-                material.SetTexture("_NorTex", materialInfoList[index].normal);
+                int index = i % TextureInfoList.Count;
+
+                TextureLoader.Instance.GetTextureAndDoAction(
+                    TextureInfoList[index].diffuse,
+                    (Texture2D tex) => material.SetTexture("_MainTex", tex));
+
+                TextureLoader.Instance.GetTextureAndDoAction(
+                    TextureInfoList[index].normal,
+                    (Texture2D tex) => material.SetTexture("_NorTex", tex));
                  //material.SetTexture("_AsgTex", materialInfoList[index].asg);
             }
         }
@@ -115,6 +125,16 @@ namespace Assets.Scripts.Model.Shapes
 
                 Scene meshScene = LoadScene(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
                 this.subMeshes = meshScene.Meshes.Select(mesh => ConvertMesh(mesh)).ToArray();
+
+
+                if (lod.SubMeshList != null)
+                {
+                    this.materials = lod.SubMeshList.Select(submesh => submesh.Material).ToArray();
+                }
+                if (lod.SubMeshMap != null)
+                {
+                    this.materials = meshScene.Materials.Select(material => lod.SubMeshMap[material.Name]?.Material).ToArray();
+                }
 
                 if (lod.Pose0 != null && false)
                 {
@@ -142,7 +162,7 @@ namespace Assets.Scripts.Model.Shapes
 
         public override void LoadTextures()
         {
-            try // CACHING!!!!
+            try
             {
                 var lod = partData.Renderable.LodList.First();
                 Scene meshScene = LoadScene(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
@@ -150,23 +170,23 @@ namespace Assets.Scripts.Model.Shapes
                 var transparanttga = PathResolver.ResolvePath("$GAME_DATA/Textures/transparent.tga");
                 var nonortga = PathResolver.ResolvePath("$GAME_DATA/Textures/nonor_nor.tga");
 
-                this.materialInfoList = new List<MaterialInfo>();
-
+                this.TextureInfoList = new List<TextureInfo>();
+                
                 if (lod.SubMeshList != null)
                 {
                     foreach (SubMesh subMesh in lod.SubMeshList)
                     {
+                        Debug.Log(subMesh.Material);
                         string dif = subMesh.TextureList.Count > 0 ? PathResolver.ResolvePath(subMesh.TextureList[0], mod?.ModFolderPath) : transparanttga;
                         string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : nonortga;
 
                         if (!File.Exists(dif)) dif = transparanttga;
                         if (!File.Exists(nor)) nor = nonortga;
 
-                        materialInfoList.Add(new MaterialInfo()
+                        TextureInfoList.Add(new TextureInfo()
                         {
-                            material = subMesh.Material,
-                            diffuse = LoadTexture(dif),
-                            normal = LoadTexture(nor)
+                            diffuse = dif,
+                            normal = nor
                         });
                     }
                 }
@@ -182,11 +202,10 @@ namespace Assets.Scripts.Model.Shapes
                             if (!File.Exists(dif)) dif = transparanttga;
                             if (!File.Exists(nor)) nor = nonortga;
 
-                            materialInfoList.Add(new MaterialInfo()
+                            TextureInfoList.Add(new TextureInfo()
                             {
-                                material = subMesh.Material,
-                                diffuse = LoadTexture(dif),
-                                normal = LoadTexture(nor)
+                                diffuse = dif,
+                                normal = nor
                             });
                         }
                     }

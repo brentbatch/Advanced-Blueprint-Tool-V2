@@ -26,6 +26,7 @@ namespace Assets.Scripts.Loaders
         public static BlueprintButton SelectedBlueprintButton;
         public static BlueprintObject blueprintObject;
 
+        public Camera Camera;
 
         public static readonly ConcurrentBag<string> KnownBlueprintPaths = new ConcurrentBag<string>();
         public static readonly BlockingCollection<BlueprintContext> LoadedBlueprints = new BlockingCollection<BlueprintContext>();
@@ -166,7 +167,14 @@ namespace Assets.Scripts.Loaders
                         // todo
                     }
                 }
-                
+
+                var destination = newblueprintObject.Bodies[0].Childs[0].gameObject.transform.position - Camera.transform.forward * 10;
+
+                var cameraState = Camera.GetComponent<UnityTemplateProjects.SimpleCameraController>().m_TargetCameraState;
+
+                cameraState.x = destination.x;
+                cameraState.y = destination.y;
+                cameraState.z = destination.z;
 
                 BlueprintLoader.blueprintObject = newblueprintObject;
                 Debug.Log("loaded bp");
@@ -208,12 +216,9 @@ namespace Assets.Scripts.Loaders
 
             childObject.SetColor(child.Color);
 
-            // todo: put this in a thread:
-            /* loadTextureActions.Enqueue(new Action(() =>
-             {
-             }));
-            */
-            shape.ApplyTextures(childGameObject);
+            if(!Constants.Instance.potatoMode)
+                shape.ApplyTextures(childGameObject);
+
             childObject.SetBlueprintPosition(child.Pos);
             childObject.SetBlueprintRotation(child.Xaxis, child.Zaxis);
 

@@ -27,7 +27,7 @@ public class FileManager : MonoBehaviour
     }
 
 
-    public IEnumerator OpenExplorer() // test code
+    public void OpenExplorer() // test code
     {
         /*
         int loaded = 0;
@@ -43,7 +43,7 @@ public class FileManager : MonoBehaviour
             ShapeId = "685ccdd5-8ee9-480d-a64a-2696c31e1db0"
         });
         //*/
-
+        /*
         string modelPath = "";
         StandaloneFileBrowser.OpenFilePanelAsync("Select a folder", "C:", "", false, (string[] paths) => 
         {
@@ -75,7 +75,7 @@ public class FileManager : MonoBehaviour
                 break;
         }
         partloader.InitPart(modelPath, new PartTextureInfo[] { } );// textures.ToArray());
-        
+        //*/
     }
 
 }

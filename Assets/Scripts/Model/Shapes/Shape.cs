@@ -18,7 +18,7 @@ namespace Assets.Scripts.Model.Shapes
         public TranslationData translation;
 
         public UnityEngine.Mesh[] subMeshes;
-        public List<MaterialInfo> materialInfoList;
+        public List<TextureInfo> TextureInfoList;
 
         public Shape(ModContext mod)
         {
@@ -49,13 +49,15 @@ namespace Assets.Scripts.Model.Shapes
         /// <returns>Texture2D</returns>
         public Texture2D LoadTexture(string resolvedFilePath)
         {
+            Debug.LogError($"DEPRECATED");
             if (!File.Exists(resolvedFilePath))
             {
                 throw new FileNotFoundException(resolvedFilePath);
             }
             if (Path.GetExtension(resolvedFilePath) == ".tga" && true)
             {
-                return TgaDecoder.TgaDecoder.FromFile(resolvedFilePath);
+                var tex = TgaDecoder.TgaDecoder.FromFile(resolvedFilePath);
+                return tex;
             }
             else
             {
