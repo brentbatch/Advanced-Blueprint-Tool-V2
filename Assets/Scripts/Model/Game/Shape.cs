@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Joint = Assets.Scripts.Model.Data.Joint;
 
-namespace Assets.Scripts.Model.Shapes
+namespace Assets.Scripts.Model.Game
 {
     public abstract class Shape
     {

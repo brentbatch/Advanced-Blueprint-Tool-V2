@@ -2,7 +2,7 @@
 using Assets.Scripts.Model;
 using Assets.Scripts.Model.BlueprintObject;
 using Assets.Scripts.Model.Data;
-using Assets.Scripts.Model.Shapes;
+using Assets.Scripts.Model.Game;
 using Assets.Scripts.Model.Unity;
 using Assets.Scripts.Unity;
 using System;
