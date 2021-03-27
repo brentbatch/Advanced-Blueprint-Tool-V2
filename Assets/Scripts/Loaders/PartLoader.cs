@@ -20,7 +20,6 @@ namespace Assets.Scripts.Loaders
 {
     public class PartLoader : MonoBehaviour
     {
-        public static AssimpContext importer = new AssimpContext();
         public static PartLoader Instance;
 
         public static readonly ConcurrentDictionary<string, Shape> loadedShapes = new ConcurrentDictionary<string, Shape>();
@@ -31,7 +30,6 @@ namespace Assets.Scripts.Loaders
         {
             if (Instance == null) // stupid singleton to make materials available anywhere
                 Instance = this;
-            importer = new AssimpContext();
         }
 
         public void Start()

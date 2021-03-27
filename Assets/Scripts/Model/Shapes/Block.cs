@@ -65,11 +65,11 @@ namespace Assets.Scripts.Model.Shapes
         }
 
         /// <summary>
-        /// Loads texture, material, ... based on BlockData
+        /// Loads texturepaths, ... based on BlockData
         /// </summary>
         public override void LoadTextures()
         {
-            try // caching!!!
+            try
             {
                 var transparanttga = PathResolver.ResolvePath("$GAME_DATA/Textures/transparent.tga", mod?.ModFolderPath);
                 var nonortga = PathResolver.ResolvePath("$GAME_DATA/Textures/nonor_nor.tga", mod?.ModFolderPath);

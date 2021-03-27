@@ -20,13 +20,10 @@ namespace Assets.Scripts.Loaders
 
         private static readonly Dictionary<string, Texture2D> loadedTextures = new Dictionary<string, Texture2D>();
 
-        //private static readonly BlockingCollection<(string, Action<Texture2D>)> promiseTextureFromPath = new BlockingCollection<(string, Action<Texture2D>)>();
-
         private static readonly BlockingCollection<(int, int)> createTexTaskQueue = new BlockingCollection<(int, int)>();
         private static readonly BlockingCollection<Texture2D> createdTexturesQueue = new BlockingCollection<Texture2D>();
 
         private static readonly BlockingCollection<Action> mainThreadActions = new BlockingCollection<Action>(); 
-
 
         public void Awake()
         {
@@ -35,10 +32,7 @@ namespace Assets.Scripts.Loaders
 
             StartCoroutine(nameof(CreateTextureCoroutine));
             StartCoroutine(nameof(DoMainThreadActions));
-            //StartCoroutine(nameof(LoadTexturesCoroutine));
         }
-
-
 
 
         public bool GetTextureAndDoAction(string texturePath, Action<Texture2D> action)
@@ -61,7 +55,6 @@ namespace Assets.Scripts.Loaders
                     // load texture:
                     textureLoadInProgress.Add(texturePath);
                     StartCoroutine(nameof(LoadTextureCoroutine), (texturePath, action, ++DevILThreads));
-                    //promiseTextureFromPath.Add((texturePath, action));
                     return false; 
                 }
 
@@ -100,48 +93,6 @@ namespace Assets.Scripts.Loaders
             textureLoadInProgress.Remove(texturePath);
             action(tex);
         }
-
-        /*
-        IEnumerator LoadTexturesCoroutine() // DEPRECATED
-        {
-            while (true)
-            {
-                if (promiseTextureFromPath.TryTake(out (string, Action<Texture2D>) loadTextureAction, 0))
-                {
-                    (string texturePath, Action<Texture2D> action) = loadTextureAction;
-
-                    if (loadedTextures.TryGetValue(texturePath, out Texture2D tex))
-                    {
-                        // texture was loaded in the meanwhile, perform action with tex
-                        action(tex);
-                    }
-                    else
-                    {
-                        // load texture
-                        if (textureLoadInProgress.Contains(texturePath))
-                        {
-                            //still in progress, re-add to queue.
-                            promiseTextureFromPath.Add(loadTextureAction);
-                        }
-                        else
-                        {
-                            var t = new Thread(() =>
-                            {
-                                tex = LoadImageFromData(File.ReadAllBytes(texturePath));
-                            });
-                            t.Start();
-
-                            yield return new WaitWhile(() => (t != null && t.IsAlive));
-
-                            loadedTextures.Add(texturePath, tex);
-                            textureLoadInProgress.Remove(texturePath);
-                            action(tex);
-                        }
-                    }
-                }
-                yield return new WaitWhile(() => promiseTextureFromPath.Count == 0);
-            }
-        }*/
 
         IEnumerator CreateTextureCoroutine()
         {
