@@ -3436,8 +3436,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f174f89dda485344b913ce2e41987dfb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material: {fileID: 2100000, guid: 14677a3a3275c9744bd921c036346aa1, type: 2}
-  glassMaterial: {fileID: 2100000, guid: 4691222d086934c4c90069dfacc857d1, type: 2}
 --- !u!4 &1993525277
 Transform:
   m_ObjectHideFlags: 0
@@ -3472,6 +3470,10 @@ MonoBehaviour:
   Part: {fileID: 5642423716957298321, guid: 7117a9f5339461643ac04d4a2e4b95cd, type: 3}
   Joint: {fileID: 3638932571213172197, guid: 3f28e20c178022344afac8fbd51c1b27, type: 3}
   SubMesh: {fileID: 8949846631924829999, guid: 9cf10edd6e1ce214d9d66e830f4010bb, type: 3}
+  partMaterial: {fileID: 2100000, guid: 14677a3a3275c9744bd921c036346aa1, type: 2}
+  glassPartMaterial: {fileID: 2100000, guid: 8b2c4c9a821f56246ae594a1438c2043, type: 2}
+  blockMaterial: {fileID: 2100000, guid: 5f66c8c1666315a4c8f0872fdd70830b, type: 2}
+  glassBlockMaterial: {fileID: 2100000, guid: 4691222d086934c4c90069dfacc857d1, type: 2}
   potatoMode: 0
 --- !u!114 &1993525279
 MonoBehaviour:
