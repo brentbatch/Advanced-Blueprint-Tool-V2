@@ -2,7 +2,7 @@
 using Assets.Scripts.Model;
 using Assets.Scripts.Model.BlueprintObject;
 using Assets.Scripts.Model.Data;
-using Assets.Scripts.Model.Shapes;
+using Assets.Scripts.Model.Game;
 using Assets.Scripts.Model.Unity;
 using Assets.Scripts.Unity;
 using System;
@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Joint = Assets.Scripts.Model.Data.Joint;
 
 namespace Assets.Scripts.Loaders
 {
@@ -26,15 +27,12 @@ namespace Assets.Scripts.Loaders
         public static BlueprintButton SelectedBlueprintButton;
         public static BlueprintObject blueprintObject;
 
+        public Camera Camera;
 
         public static readonly ConcurrentBag<string> KnownBlueprintPaths = new ConcurrentBag<string>();
         public static readonly BlockingCollection<BlueprintContext> LoadedBlueprints = new BlockingCollection<BlueprintContext>();
 
         private static readonly Dictionary<string, Coroutine> loadBlueprintsCoroutine = new Dictionary<string, Coroutine>();
-
-        private static readonly Queue<Action> loadTextureActions = new Queue<Action>();
-
-        // todo: temp static cache in Part class of the loaded mesh & textures, when another uuid found, instantiate from the list
 
         private void Start()
         {
@@ -116,15 +114,6 @@ namespace Assets.Scripts.Loaders
             }
         }
 
-        IEnumerator DelayedLoadTextures()
-        {
-            while(true) // TODO: somehow make this shit threaded
-            {
-                yield return new WaitUntil(() => loadTextureActions.Count > 0);
-                loadTextureActions.Dequeue().Invoke();
-            }
-        }
-
         /// <summary>
         /// click event that should trigger when clicking the 'load' button
         /// </summary>
@@ -155,7 +144,6 @@ namespace Assets.Scripts.Loaders
                     newblueprintObject.Bodies.Add(bodyObject);
                     foreach (var child in body.Childs)
                     {
-                        // todo: split CreateChildObject into smaller functions and use here
                         bodyObject.Childs.Add(CreateChildObject(child, bodyGameObject));
                     }
                 }
@@ -163,10 +151,17 @@ namespace Assets.Scripts.Loaders
                 {
                     foreach (var joint in blueprintData.Joints)
                     {
-                        // todo
+                        newblueprintObject.Joints.Add(CreateJointObject(joint, rootGameObject));
                     }
                 }
-                
+
+                var destination = newblueprintObject.Bodies[0].Childs[0].gameObject.transform.position - Camera.transform.forward * 10;
+
+                var cameraState = Camera.GetComponent<UnityTemplateProjects.SimpleCameraController>().m_TargetCameraState;
+
+                cameraState.x = destination.x;
+                cameraState.y = destination.y;
+                cameraState.z = destination.z;
 
                 BlueprintLoader.blueprintObject = newblueprintObject;
                 Debug.Log("loaded bp");
@@ -196,33 +191,54 @@ namespace Assets.Scripts.Loaders
             {
                 Debug.LogError(e);
             }
+            throw new NotImplementedException();
         }
 
         private ChildObject CreateChildObject(Child child, GameObject parent)
         {
             Shape shape = PartLoader.GetShape(child);
 
-            GameObject childGameObject = shape.Instantiate(parent.transform);
+            GameObject GameObject = shape.Instantiate(parent.transform);
 
-            ChildObject childObject = childGameObject.AddComponent<ChildObject>();
+            ChildObject childScript = GameObject.AddComponent<ChildObject>();
+            childScript.shape = shape;
 
-            childObject.SetColor(child.Color);
+            childScript.SetColor(child.Color);
 
-            // todo: put this in a thread:
-            /* loadTextureActions.Enqueue(new Action(() =>
-             {
-             }));
-            */
-            shape.ApplyTextures(childGameObject);
-            childObject.SetBlueprintPosition(child.Pos);
-            childObject.SetBlueprintRotation(child.Xaxis, child.Zaxis);
+            if (!Constants.Instance.potatoMode)
+                shape.ApplyTextures(GameObject);
+
+            childScript.SetBlueprintPosition(child.Pos);
+            childScript.SetBlueprintRotation(child.Xaxis, child.Zaxis);
 
             if (shape is Block && child.Bounds != null)
             {
-                childObject.SetBlueprintBounds(child.Bounds);
+                childScript.SetBlueprintBounds(child.Bounds);
             }
 
-            return childObject;
+            return childScript;
+        }
+
+        private JointObject CreateJointObject(Joint joint, GameObject parent)
+        {
+            Shape shape = PartLoader.GetJoint(joint);
+
+            GameObject gameObject = shape.Instantiate(parent.transform);
+
+            JointObject jointScript = gameObject.AddComponent<JointObject>();
+            jointScript.shape = shape;
+
+            jointScript.SetColor(joint.Color);
+
+            if (!Constants.Instance.potatoMode)
+                shape.ApplyTextures(gameObject);
+
+            jointScript.SetBlueprintPosition(joint.PosA);
+            jointScript.SetBlueprintRotation(joint.XaxisA, joint.ZaxisA);
+
+            jointScript.DoRotationPositionOffset(joint.XaxisA, joint.ZaxisA); // required for joints
+
+            return jointScript;
         }
 
 

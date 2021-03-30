@@ -152,6 +152,11 @@ public static class PathResolver
                             if (IsScrapMechanicPath(scrapMechanicPath))
                             {
                                 PathResolver.scrapMechanicPath = scrapMechanicPath;
+                                PathResolver.workShopPath = Path.Combine(
+                                    Directory.GetParent(
+                                        Directory.GetParent(
+                                            PathResolver.scrapMechanicPath).FullName).FullName,
+                                    "workshop", "content", "387990");
                                 break;
                             }
                         }
@@ -165,7 +170,7 @@ public static class PathResolver
         }
 
         string folder = steamInstallationPath == "" ? Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) : steamInstallationPath;
-        while (!Directory.Exists(PathResolver.scrapMechanicPath))
+        while (!IsScrapMechanicPath(PathResolver.scrapMechanicPath))
         {
             StandaloneFileBrowser.OpenFolderPanelAsync("Please select the Scrap Mechanic folder", steamInstallationPath, false, (string[] paths) =>
             {
@@ -189,9 +194,9 @@ public static class PathResolver
         {
             StandaloneFileBrowser.OpenFolderPanelAsync("Please select the Workshop folder containing workshop blueprints", steamInstallationPath, false, (string[] paths) =>
             {
-                if (!string.IsNullOrEmpty(paths.First()))
+                if (!string.IsNullOrEmpty(paths?.First()))
                 {
-                    PathResolver.workShopPath = paths.First();
+                    PathResolver.workShopPath = paths?.First();
                 }
             });
         }
@@ -200,9 +205,9 @@ public static class PathResolver
         {
             StandaloneFileBrowser.OpenFolderPanelAsync("Please select your User_<numbersHere> folder", steamInstallationPath, false, (string[] paths) =>
             {
-                if (!string.IsNullOrEmpty(paths.First()))
+                if (!string.IsNullOrEmpty(paths?.First()))
                 {
-                    PathResolver.ScrapMechanicAppdataUserPath = paths.First();
+                    PathResolver.ScrapMechanicAppdataUserPath = paths?.First();
                 }
             });
         }

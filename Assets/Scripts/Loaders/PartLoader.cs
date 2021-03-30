@@ -11,34 +11,16 @@ using System.Collections;
 using Newtonsoft.Json;
 using Assets.Scripts.Model.Data;
 using System.Collections.Concurrent;
-using Assets.Scripts.Model.Shapes;
+using Assets.Scripts.Model.Game;
 using Assets.Scripts.Context;
 using Joint = Assets.Scripts.Model.Data.Joint;
 using System.Threading;
 
 namespace Assets.Scripts.Loaders
 {
-    public enum TextureMaterial
-    {
-        DifAsgNor,
-        Regular,
-        Glass
-    }
-    public class PartTextureInfo
-    {
-        public TextureMaterial material;
-        public string diffusePath;
-        public string normalPath;
-        public string asgPath;
-    }
-
     public class PartLoader : MonoBehaviour
     {
-        public static AssimpContext importer = new AssimpContext();
         public static PartLoader Instance;
-
-        public UnityEngine.Material material;
-        public UnityEngine.Material glassMaterial;
 
         public static readonly ConcurrentDictionary<string, Shape> loadedShapes = new ConcurrentDictionary<string, Shape>();
         public static readonly ConcurrentDictionary<string, ModContext> mods = new ConcurrentDictionary<string, ModContext>();
@@ -48,7 +30,6 @@ namespace Assets.Scripts.Loaders
         {
             if (Instance == null) // stupid singleton to make materials available anywhere
                 Instance = this;
-            importer = new AssimpContext();
         }
 
         public void Start()
@@ -221,171 +202,6 @@ namespace Assets.Scripts.Loaders
             var shape = loadedShapes.GetOrAdd(joint.ShapeId, 
                 (key) => Shape.CreateBlank(joint));
             return shape;
-        }
-
-
-
-        // todo: get rid of this:
-
-        public Task<GameObject> InitPart(string meshPath, PartTextureInfo[] textureList)
-        {
-            return InitPart(meshPath, textureList, new Vector3(0, 0, 0), new Color(1,1,1));
-        }
-
-        public Task<GameObject> InitPart(string meshPath, PartTextureInfo[] textureInfoArray, Vector3 position, Color color)
-        {
-            // create 'parent' gameobject:
-            GameObject Go = new GameObject();
-            Go.transform.position = position;
-
-            List<GameObject> subObjects = new List<GameObject>();
-            try
-            {
-                if (File.Exists(textureInfoArray[1]?.diffusePath))
-                {
-                    Go.name = Path.GetFileName(textureInfoArray[1].diffusePath);
-                }
-                else if (File.Exists(textureInfoArray[1]?.normalPath))
-                {
-                    Go.name = Path.GetFileName(textureInfoArray[1].normalPath);
-                }
-
-                // load scene using assimp:
-                Scene scene = LoadScene(meshPath);
-
-                for (int i = 0; i < scene.MeshCount; i++)
-                {
-                    var unityMesh = ConvertMesh(scene.Meshes[i]);
-                    var unityMaterial = CreateMaterial(textureInfoArray[i]);
-
-                    unityMaterial.SetColor("_Color", color);
-
-                    GameObject childObject = new GameObject();
-                    subObjects.Add(childObject);
-                    if (textureInfoArray[i]?.diffusePath != null)
-                    {
-                        childObject.name = Path.GetFileName(textureInfoArray[i]?.diffusePath);
-                    }
-                    else if (textureInfoArray[i]?.normalPath != null)
-                    {
-                        childObject.name = Path.GetFileName(textureInfoArray[i]?.normalPath);
-                    }
-                    childObject.transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
-                    childObject.transform.SetParent(Go.transform);
-                    childObject.AddComponent<MeshFilter>();
-                    childObject.AddComponent<MeshRenderer>();
-                    childObject.GetComponent<MeshFilter>().mesh = unityMesh;
-                    childObject.GetComponent<MeshRenderer>().material = unityMaterial;
-                }
-            }
-            catch (Exception e)
-            {
-                // clean up created childobjects:
-                subObjects.ForEach(obj => Destroy(obj));
-                Destroy(Go);
-                Debug.LogError($"An error occurred: {e.Message}{e.StackTrace}");
-                return null;
-            }
-            return Task.FromResult(Go);
-        }
-
-        private Scene LoadScene(string meshPath)
-        {
-            //importer.SetConfig(new Assimp.Configs.MeshVertexLimitConfig(60000));
-            //importer.SetConfig(new Assimp.Configs.MeshTriangleLimitConfig(60000));
-            //importer.SetConfig(new Assimp.Configs.RemoveDegeneratePrimitivesConfig(true));
-            //importer.SetConfig(new Assimp.Configs.SortByPrimitiveTypeConfig(Assimp.PrimitiveType.Line | Assimp.PrimitiveType.Point));
-
-            Assimp.PostProcessSteps postProcessSteps = Assimp.PostProcessPreset.TargetRealTimeMaximumQuality | Assimp.PostProcessSteps.MakeLeftHanded | Assimp.PostProcessSteps.FlipWindingOrder;
-
-            Scene scene = importer.ImportFile(meshPath);
-            //importer.Dispose();
-            return scene;
-        }
-
-        private UnityEngine.Mesh ConvertMesh(Assimp.Mesh mesh)
-        {
-            UnityEngine.Mesh unityMesh = new UnityEngine.Mesh
-            {
-                vertices = mesh.Vertices.Select(v => new Vector3(-v.X, v.Y, v.Z)).ToArray(),
-                triangles = GetTriangles(mesh.Faces).ToArray(),
-                normals = mesh.Normals?.Select(n => new Vector3(-n.X, n.Y, n.Z)).ToArray()
-            };
-            for (int i = 0; i < mesh.TextureCoordinateChannelCount && i < 8; i++)
-            {
-                unityMesh.SetUVs(i, mesh.TextureCoordinateChannels[i]?.Select(coord => new Vector2(coord.X, coord.Y)).ToArray());
-            }
-            return unityMesh;
-        }
-
-        IEnumerable<int> GetTriangles(List<Face> faces)
-        {
-            foreach (Face face in faces)
-            {
-                switch (face.IndexCount)
-                {
-                    case 3:
-                        yield return (int)face.Indices[0];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[1];
-                        break;
-                    case 4:
-                        yield return (int)face.Indices[0];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[1];
-
-                        yield return (int)face.Indices[3];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[0];
-                        break;
-                    case 5:
-                        yield return (int)face.Indices[0];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[1];
-
-                        yield return (int)face.Indices[3];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[0];
-
-                        yield return (int)face.Indices[4];
-                        yield return (int)face.Indices[3];
-                        yield return (int)face.Indices[0];
-                        break;
-                    default:
-                        Debug.LogError("not implemented: more than 5 vertices in one face!");
-                        break;
-                }
-            }
-        }
-
-        private UnityEngine.Material CreateMaterial(PartTextureInfo info)
-        {
-            UnityEngine.Material newMaterial;
-
-            switch (info?.material)
-            {
-                case TextureMaterial.Glass:
-                    newMaterial = new UnityEngine.Material(glassMaterial);
-                    break;
-                default:
-                    newMaterial = new UnityEngine.Material(material);
-                    break;
-            }
-
-            if (info?.diffusePath != null)
-            {
-                
-                newMaterial.SetTexture("_MainTex", /*TGALoader.LoadTGA(info.diffusePath) );//*/ TgaDecoder.TgaDecoder.FromFile(info.diffusePath));
-            }
-            if (info?.normalPath != null)
-            {
-                newMaterial.SetTexture("_NorTex", /*TGALoader.LoadTGA(info.normalPath)); //*/TgaDecoder.TgaDecoder.FromFile(info.normalPath));
-            }
-            if (info?.asgPath != null)
-            {
-                newMaterial.SetTexture("_AsgTex", TgaDecoder.TgaDecoder.FromFile(info.asgPath));
-            }
-            return newMaterial;
         }
 
     }

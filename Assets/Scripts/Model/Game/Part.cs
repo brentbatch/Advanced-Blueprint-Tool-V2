@@ -12,15 +12,18 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Assets.Scripts.Model.Shapes
+namespace Assets.Scripts.Model.Game
 {
     public class Part : Shape
     {
+        private static AssimpContext assimpImporter = new AssimpContext();
+
         protected PartData partData;
 
         public UnityEngine.Mesh[] pose0;
         public UnityEngine.Mesh[] pose1;
         public UnityEngine.Mesh[] pose2;
+        public string[] materials;
 
         public Vector3 bounds;
 
@@ -28,12 +31,17 @@ namespace Assets.Scripts.Model.Shapes
         {
             this.partData = partData;
             this.partData.LoadRenderable(mod?.ModFolderPath); // load json file
+
+            //importer.SetConfig(new Assimp.Configs.MeshVertexLimitConfig(60000));
+            //importer.SetConfig(new Assimp.Configs.MeshTriangleLimitConfig(60000));
+            //importer.SetConfig(new Assimp.Configs.RemoveDegeneratePrimitivesConfig(true));
+            //importer.SetConfig(new Assimp.Configs.SortByPrimitiveTypeConfig(Assimp.PrimitiveType.Line | Assimp.PrimitiveType.Point));
+            //Assimp.PostProcessSteps postProcessSteps = Assimp.PostProcessPreset.TargetRealTimeMaximumQuality | Assimp.PostProcessSteps.MakeLeftHanded | Assimp.PostProcessSteps.FlipWindingOrder;
         }
 
         public override GameObject Instantiate(Transform parent)
         {
             var gameObject = UnityEngine.Object.Instantiate(Constants.Instance.Part, parent);
-            gameObject.GetComponent<ChildObject>().shape = this;
 
             if (this.subMeshes == null)
                 LoadMesh();
@@ -53,10 +61,12 @@ namespace Assets.Scripts.Model.Shapes
 
                 subMeshGameObject.transform.position = this.bounds / 2;
 
-                // todo: edit box collider
-
-                //subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(PartLoader.Instance.material);
-                // todo: CORRECT to the right material based on partdata
+                if ( materials[i % materials.Length].ToLower().Contains("glass"))
+                {
+                    subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassPartMaterial);
+                    subMeshGameObject.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    subMeshGameObject.GetComponent<Renderer>().receiveShadows = false;
+                }
             }
             return gameObject;
         }
@@ -89,17 +99,34 @@ namespace Assets.Scripts.Model.Shapes
 
         public override void ApplyTextures(GameObject gameObject)
         {
-            if (materialInfoList == null)
+            if (TextureInfoList == null)
                 LoadTextures();
 
             MeshRenderer[] meshRenderers = gameObject.GetComponentsInChildren<MeshRenderer>();
             for (int i = 0; i < subMeshes.Length && i < meshRenderers.Length; i++)
             {
                 var material = meshRenderers[i].material;
-                int index = i % materialInfoList.Count;
-                material.SetTexture("_MainTex", materialInfoList[index].diffuse);
-                material.SetTexture("_NorTex", materialInfoList[index].normal);
-                 //material.SetTexture("_AsgTex", materialInfoList[index].asg);
+                int index = i % TextureInfoList.Count;
+
+                var texInfo = TextureInfoList[index];
+                if (texInfo.diffuse != null)
+                {
+                    TextureLoader.Instance.GetTextureAndDoAction(
+                        texInfo.diffuse,
+                        (Texture2D tex) => material.SetTexture("_MainTex", tex));
+                }
+                if (texInfo.normal != null)
+                {
+                    TextureLoader.Instance.GetTextureAndDoAction(
+                        texInfo.normal,
+                        (Texture2D tex) => material.SetTexture("_NorTex", tex));
+                }
+                if (texInfo.asg != null)
+                {
+                    TextureLoader.Instance.GetTextureAndDoAction(
+                        texInfo.asg,
+                        (Texture2D tex) => material.SetTexture("_AsgTex", tex));
+                }
             }
         }
 
@@ -113,22 +140,32 @@ namespace Assets.Scripts.Model.Shapes
             {
                 var lod = partData.Renderable.LodList.First();
 
-                Scene meshScene = LoadScene(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
+                Scene meshScene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
                 this.subMeshes = meshScene.Meshes.Select(mesh => ConvertMesh(mesh)).ToArray();
+
+
+                if (lod.SubMeshList != null)
+                {
+                    this.materials = lod.SubMeshList.Select(submesh => submesh.Material).ToArray();
+                }
+                if (lod.SubMeshMap != null)
+                {
+                    this.materials = meshScene.Materials.Select(material => lod.SubMeshMap[material.Name]?.Material).ToArray();
+                }
 
                 if (lod.Pose0 != null && false)
                 {
-                    Scene pose0Scene = LoadScene(PathResolver.ResolvePath(lod.Pose0, this.mod?.ModFolderPath));
+                    Scene pose0Scene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Pose0, this.mod?.ModFolderPath));
                     this.pose0 = pose0Scene.Meshes.Select(mesh => ConvertMesh(mesh)).ToArray();
                 }
                 if (lod.Pose1 != null && false)
                 {
-                    Scene pose1Scene = LoadScene(PathResolver.ResolvePath(lod.Pose1, this.mod?.ModFolderPath));
+                    Scene pose1Scene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Pose1, this.mod?.ModFolderPath));
                     this.pose1 = pose1Scene.Meshes.Select(mesh => ConvertMesh(mesh)).ToArray();
                 }
                 if (lod.Pose2 != null && false)
                 {
-                    Scene pose2Scene = LoadScene(PathResolver.ResolvePath(lod.Pose2, this.mod?.ModFolderPath));
+                    Scene pose2Scene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Pose2, this.mod?.ModFolderPath));
                     this.pose2 = pose2Scene.Meshes.Select(mesh => ConvertMesh(mesh)).ToArray();
                 }
             }
@@ -142,31 +179,33 @@ namespace Assets.Scripts.Model.Shapes
 
         public override void LoadTextures()
         {
-            try // CACHING!!!!
+            try
             {
                 var lod = partData.Renderable.LodList.First();
-                Scene meshScene = LoadScene(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
+                Scene meshScene = assimpImporter.ImportFile(PathResolver.ResolvePath(lod.Mesh, this.mod?.ModFolderPath));
 
-                var transparanttga = PathResolver.ResolvePath("$GAME_DATA/Textures/transparent.tga");
-                var nonortga = PathResolver.ResolvePath("$GAME_DATA/Textures/nonor_nor.tga");
+                //var transparanttga = PathResolver.ResolvePath("$GAME_DATA/Textures/transparent.tga");
+                //var nonortga = PathResolver.ResolvePath("$GAME_DATA/Textures/nonor_nor.tga");
 
-                this.materialInfoList = new List<MaterialInfo>();
-
+                this.TextureInfoList = new List<TextureInfo>();
+                
                 if (lod.SubMeshList != null)
                 {
                     foreach (SubMesh subMesh in lod.SubMeshList)
                     {
-                        string dif = subMesh.TextureList.Count > 0 ? PathResolver.ResolvePath(subMesh.TextureList[0], mod?.ModFolderPath) : transparanttga;
-                        string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : nonortga;
+                        string dif = subMesh.TextureList.Count > 0 ? PathResolver.ResolvePath(subMesh.TextureList[0], mod?.ModFolderPath) : null;// : transparanttga;
+                        string asg = subMesh.TextureList.Count > 1 ? PathResolver.ResolvePath(subMesh.TextureList[1], mod?.ModFolderPath) : null;// : transparanttga;
+                        string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : null;// : nonortga;
 
-                        if (!File.Exists(dif)) dif = transparanttga;
-                        if (!File.Exists(nor)) nor = nonortga;
+                        if (!File.Exists(dif)) dif = null; //transparanttga;
+                        if (!File.Exists(asg)) dif = null; //transparanttga;
+                        if (!File.Exists(nor)) nor = null; //nonortga;
 
-                        materialInfoList.Add(new MaterialInfo()
+                        TextureInfoList.Add(new TextureInfo()
                         {
-                            material = subMesh.Material,
-                            diffuse = LoadTexture(dif),
-                            normal = LoadTexture(nor)
+                            diffuse = dif,
+                            asg = asg,
+                            normal = nor
                         });
                     }
                 }
@@ -176,17 +215,19 @@ namespace Assets.Scripts.Model.Shapes
                     {
                         if (lod.SubMeshMap.TryGetValue(material.Name, out SubMesh subMesh))
                         {
-                            string dif = subMesh.TextureList.Count > 0 ? PathResolver.ResolvePath(subMesh.TextureList[0], mod?.ModFolderPath) : transparanttga;
-                            string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : nonortga;
+                            string dif = subMesh.TextureList.Count > 0 ? PathResolver.ResolvePath(subMesh.TextureList[0], mod?.ModFolderPath) : null;// : transparanttga;
+                            string asg = subMesh.TextureList.Count > 1 ? PathResolver.ResolvePath(subMesh.TextureList[1], mod?.ModFolderPath) : null;// : transparanttga;
+                            string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : null;// : nonortga;
 
-                            if (!File.Exists(dif)) dif = transparanttga;
-                            if (!File.Exists(nor)) nor = nonortga;
+                            if (!File.Exists(dif)) dif = null; //transparanttga;
+                            if (!File.Exists(asg)) dif = null; //transparanttga;
+                            if (!File.Exists(nor)) nor = null; //nonortga;
 
-                            materialInfoList.Add(new MaterialInfo()
+                            TextureInfoList.Add(new TextureInfo()
                             {
-                                material = subMesh.Material,
-                                diffuse = LoadTexture(dif),
-                                normal = LoadTexture(nor)
+                                diffuse = dif,
+                                asg = asg,
+                                normal = nor
                             });
                         }
                     }
@@ -197,20 +238,6 @@ namespace Assets.Scripts.Model.Shapes
                 Debug.LogError($"Failed loading textures for part {partData.Uuid}\nError: {e} \nTrace: {StackTraceUtility.ExtractStringFromException(e)}");
 
             }
-        }
-
-
-        protected Scene LoadScene(string meshPath)
-        {
-            //importer.SetConfig(new Assimp.Configs.MeshVertexLimitConfig(60000));
-            //importer.SetConfig(new Assimp.Configs.MeshTriangleLimitConfig(60000));
-            //importer.SetConfig(new Assimp.Configs.RemoveDegeneratePrimitivesConfig(true));
-            //importer.SetConfig(new Assimp.Configs.SortByPrimitiveTypeConfig(Assimp.PrimitiveType.Line | Assimp.PrimitiveType.Point));
-            //Assimp.PostProcessSteps postProcessSteps = Assimp.PostProcessPreset.TargetRealTimeMaximumQuality | Assimp.PostProcessSteps.MakeLeftHanded | Assimp.PostProcessSteps.FlipWindingOrder;
-
-            Scene scene = PartLoader.importer.ImportFile(meshPath);
-
-            return scene;
         }
 
         protected UnityEngine.Mesh ConvertMesh(Assimp.Mesh mesh)
@@ -233,38 +260,11 @@ namespace Assets.Scripts.Model.Shapes
         {
             foreach (Face face in faces)
             {
-                switch (face.IndexCount)
+                for(int i = 1; i+1 < face.IndexCount; i++)
                 {
-                    case 3:
-                        yield return (int)face.Indices[0];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[1];
-                        break;
-                    case 4:
-                        yield return (int)face.Indices[0];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[1];
-
-                        yield return (int)face.Indices[3];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[0];
-                        break;
-                    case 5:
-                        yield return (int)face.Indices[0];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[1];
-
-                        yield return (int)face.Indices[3];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[0];
-
-                        yield return (int)face.Indices[4];
-                        yield return (int)face.Indices[3];
-                        yield return (int)face.Indices[0];
-                        break;
-                    default:
-                        //Debug.LogWarning($"not implemented: more than 5 vertices in one face! vertices found: {face.IndexCount}");
-                        break;
+                    yield return face.Indices[i+1];
+                    yield return face.Indices[i];
+                    yield return face.Indices[0];
                 }
             }
         }

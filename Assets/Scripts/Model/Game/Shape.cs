@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Joint = Assets.Scripts.Model.Data.Joint;
 
-namespace Assets.Scripts.Model.Shapes
+namespace Assets.Scripts.Model.Game
 {
     public abstract class Shape
     {
@@ -18,7 +18,7 @@ namespace Assets.Scripts.Model.Shapes
         public TranslationData translation;
 
         public UnityEngine.Mesh[] subMeshes;
-        public List<MaterialInfo> materialInfoList;
+        public List<TextureInfo> TextureInfoList;
 
         public Shape(ModContext mod)
         {
@@ -41,33 +41,6 @@ namespace Assets.Scripts.Model.Shapes
 
         public abstract void LoadMesh();
         public abstract void LoadTextures();
-
-        /// <summary>
-        /// load a texture from a certain path
-        /// </summary>
-        /// <param name="resolvedFilePath"></param>
-        /// <returns>Texture2D</returns>
-        public Texture2D LoadTexture(string resolvedFilePath)
-        {
-            if (!File.Exists(resolvedFilePath))
-            {
-                throw new FileNotFoundException(resolvedFilePath);
-            }
-            if (Path.GetExtension(resolvedFilePath) == ".tga" && true)
-            {
-                return TgaDecoder.TgaDecoder.FromFile(resolvedFilePath);
-            }
-            else
-            {
-                Texture2D tex = new Texture2D(2, 2);
-                if (!tex.LoadImage(File.ReadAllBytes(resolvedFilePath)))
-                {
-                    Debug.LogError($"Was not able to load texture {resolvedFilePath}");
-                }
-                tex.Compress(false);
-                return tex;
-            }
-        }
 
     }
 }

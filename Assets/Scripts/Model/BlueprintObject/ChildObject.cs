@@ -1,6 +1,6 @@
 ﻿using Assets.Scripts.Loaders;
 using Assets.Scripts.Model.Data;
-using Assets.Scripts.Model.Shapes;
+using Assets.Scripts.Model.Game;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +17,12 @@ namespace Assets.Scripts.Model.BlueprintObject
         public Vector3 rotatedBounds;
         public int xaxis;
         public int zaxis;
+
+        [ContextMenu("rotation")]
+        void SetRotationDebug()
+        {
+            this.SetBlueprintRotation(this.xaxis, this.zaxis);
+        }
 
         public void SetColor(string strColor)
         {
@@ -61,12 +67,12 @@ namespace Assets.Scripts.Model.BlueprintObject
         /// <summary>
         /// use rotated bounds for features.
         /// </summary>
-        private void CalculateRotatedBounds()
+        protected void CalculateRotatedBounds()
         {
             //throw new NotImplementedException();
         }
 
-        public void SetBlueprintRotation(int xaxis, int zaxis)
+        public virtual void SetBlueprintRotation(int xaxis, int zaxis)
         {
             this.xaxis = xaxis;
             this.zaxis = zaxis;
@@ -79,62 +85,8 @@ namespace Assets.Scripts.Model.BlueprintObject
             Vector3 right = new Vector3(xAbs == 1 ? xSign : 0, xAbs == 3 ? xSign : 0, xAbs == 2 ? xSign : 0);
             Vector3 up = new Vector3(zAbs == 1 ? zSign : 0, zAbs == 3 ? zSign : 0, zAbs == 2 ? zSign : 0);
             Vector3 forward = Vector3.Cross(right, up);
-
-            //int yaxis = (int)(forward.x * 1 + forward.y * 2 + forward.z * 3);
-
-            var rotation = gameObject.transform.rotation;
-            rotation.SetLookRotation(forward, up);
-
-            // todo: create vector3D based on xaxis and zaxis, then calculate 'yaxis'  vector3D and use that for forward in lookrotation
-            // get rid of switch case
-            /*
-            switch (Math.Abs(xaxis))
-            {
-                case 1:
-                    switch (Math.Abs(zaxis))
-                    {
-                        case 1:
-                            Debug.LogError($"Incorrect rotationset found !");
-                            break;
-                        case 2:
-                            rotation.SetLookRotation(new Vector3(-xpos, 0, 0), new Vector3(0, zpos, 0)); // ( forward (z) , up (y) )
-                            break;
-                        case 3:
-                            rotation.SetLookRotation(new Vector3( 0, 0, xpos), new Vector3(0, zpos, 0));
-                            break;
-                    }
-                    break;
-                case 2:
-                    switch (Math.Abs(zaxis))
-                    {
-                        case 1:
-                            rotation.SetLookRotation(new Vector3(0, xpos, 0), new Vector3(zpos, 0, 0));
-                            break;
-                        case 2:
-                            Debug.LogError($"Incorrect rotationset found !");
-                            break;
-                        case 3:
-                            rotation.SetLookRotation(new Vector3(0, xpos, 0), new Vector3(0, 0, zpos));
-                            break;
-                    }
-                    break;
-                case 3:
-                    switch (Math.Abs(zaxis))
-                    {
-                        case 1:
-                            rotation.SetLookRotation(new Vector3(0, 0, xpos), new Vector3(zpos, 0, 0));
-                            break;
-                        case 2:
-                            rotation.SetLookRotation(new Vector3(0, 0, xpos), new Vector3(0, zpos, 0));
-                            break;
-                        case 3:
-                            Debug.LogError($"Incorrect rotationset found !");
-                            break;
-                    }
-                    break;
-            } //rotations translate!
-            //*/
-            gameObject.transform.rotation = rotation;
+            
+            gameObject.transform.rotation = Quaternion.LookRotation(forward, up);
             CalculateRotatedBounds();
         }
 
@@ -143,5 +95,14 @@ namespace Assets.Scripts.Model.BlueprintObject
 
         }
 
+
+        public virtual (int,int,int) GetBlueprintPosition() //fkd in joints
+        {
+            return default;
+        }
+        public (int,int) GetBlueprintRotation()
+        {
+            return default;
+        }
     }
 }

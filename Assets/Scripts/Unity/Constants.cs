@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Assets.Scripts.Unity
 {
@@ -17,6 +18,14 @@ namespace Assets.Scripts.Unity
         public GameObject Joint;
         public GameObject SubMesh;
 
+        public UnityEngine.Material partMaterial;
+        public UnityEngine.Material glassPartMaterial;
+
+        public UnityEngine.Material blockMaterial;
+        public UnityEngine.Material glassBlockMaterial;
+
+        public bool potatoMode = false;
+
 
         public void Awake()
         {
@@ -24,7 +33,10 @@ namespace Assets.Scripts.Unity
                 Instance = this;
         }
 
-
+        public void SetPotatoMode(Toggle toggle)
+        {
+            potatoMode = toggle.isOn;
+        }
     }
 
 }
