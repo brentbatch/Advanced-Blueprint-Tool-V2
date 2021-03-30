@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Joint = Assets.Scripts.Model.Data.Joint;
 
 namespace Assets.Scripts.Loaders
 {
@@ -143,7 +144,6 @@ namespace Assets.Scripts.Loaders
                     newblueprintObject.Bodies.Add(bodyObject);
                     foreach (var child in body.Childs)
                     {
-                        // todo: split CreateChildObject into smaller functions and use here
                         bodyObject.Childs.Add(CreateChildObject(child, bodyGameObject));
                     }
                 }
@@ -151,7 +151,7 @@ namespace Assets.Scripts.Loaders
                 {
                     foreach (var joint in blueprintData.Joints)
                     {
-                        // todo
+                        newblueprintObject.Joints.Add(CreateJointObject(joint, rootGameObject));
                     }
                 }
 
@@ -198,24 +198,47 @@ namespace Assets.Scripts.Loaders
         {
             Shape shape = PartLoader.GetShape(child);
 
-            GameObject childGameObject = shape.Instantiate(parent.transform);
+            GameObject GameObject = shape.Instantiate(parent.transform);
 
-            ChildObject childObject = childGameObject.AddComponent<ChildObject>();
+            ChildObject childScript = GameObject.AddComponent<ChildObject>();
+            childScript.shape = shape;
 
-            childObject.SetColor(child.Color);
+            childScript.SetColor(child.Color);
 
-            if(!Constants.Instance.potatoMode)
-                shape.ApplyTextures(childGameObject);
+            if (!Constants.Instance.potatoMode)
+                shape.ApplyTextures(GameObject);
 
-            childObject.SetBlueprintPosition(child.Pos);
-            childObject.SetBlueprintRotation(child.Xaxis, child.Zaxis);
+            childScript.SetBlueprintPosition(child.Pos);
+            childScript.SetBlueprintRotation(child.Xaxis, child.Zaxis);
 
             if (shape is Block && child.Bounds != null)
             {
-                childObject.SetBlueprintBounds(child.Bounds);
+                childScript.SetBlueprintBounds(child.Bounds);
             }
 
-            return childObject;
+            return childScript;
+        }
+
+        private JointObject CreateJointObject(Joint joint, GameObject parent)
+        {
+            Shape shape = PartLoader.GetJoint(joint);
+
+            GameObject gameObject = shape.Instantiate(parent.transform);
+
+            JointObject jointScript = gameObject.AddComponent<JointObject>();
+            jointScript.shape = shape;
+
+            jointScript.SetColor(joint.Color);
+
+            if (!Constants.Instance.potatoMode)
+                shape.ApplyTextures(gameObject);
+
+            jointScript.SetBlueprintPosition(joint.PosA);
+            jointScript.SetBlueprintRotation(joint.XaxisA, joint.ZaxisA);
+
+            jointScript.DoRotationPositionOffset(joint.XaxisA, joint.ZaxisA); // required for joints
+
+            return jointScript;
         }
 
 

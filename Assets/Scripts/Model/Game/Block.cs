@@ -25,7 +25,6 @@ namespace Assets.Scripts.Model.Game
         public override GameObject Instantiate(Transform parent)
         {
             var gameObject = UnityEngine.Object.Instantiate(Constants.Instance.Block, parent);
-            gameObject.GetComponent<ChildObject>().shape = this;
 
             GameObject subMeshGameObject = UnityEngine.Object.Instantiate(Constants.Instance.Cube, gameObject.transform);
 

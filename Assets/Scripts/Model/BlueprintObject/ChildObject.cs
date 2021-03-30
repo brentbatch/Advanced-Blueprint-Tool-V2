@@ -18,6 +18,12 @@ namespace Assets.Scripts.Model.BlueprintObject
         public int xaxis;
         public int zaxis;
 
+        [ContextMenu("rotation")]
+        void SetRotationDebug()
+        {
+            this.SetBlueprintRotation(this.xaxis, this.zaxis);
+        }
+
         public void SetColor(string strColor)
         {
             strColor = strColor.First() == '#' ? strColor : '#' + strColor;
@@ -61,12 +67,12 @@ namespace Assets.Scripts.Model.BlueprintObject
         /// <summary>
         /// use rotated bounds for features.
         /// </summary>
-        private void CalculateRotatedBounds()
+        protected void CalculateRotatedBounds()
         {
             //throw new NotImplementedException();
         }
 
-        public void SetBlueprintRotation(int xaxis, int zaxis)
+        public virtual void SetBlueprintRotation(int xaxis, int zaxis)
         {
             this.xaxis = xaxis;
             this.zaxis = zaxis;
@@ -89,5 +95,14 @@ namespace Assets.Scripts.Model.BlueprintObject
 
         }
 
+
+        public virtual (int,int,int) GetBlueprintPosition() //fkd in joints
+        {
+            return default;
+        }
+        public (int,int) GetBlueprintRotation()
+        {
+            return default;
+        }
     }
 }

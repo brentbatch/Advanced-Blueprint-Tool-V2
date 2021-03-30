@@ -42,7 +42,6 @@ namespace Assets.Scripts.Model.Game
         public override GameObject Instantiate(Transform parent)
         {
             var gameObject = UnityEngine.Object.Instantiate(Constants.Instance.Part, parent);
-            gameObject.GetComponent<ChildObject>().shape = this;
 
             if (this.subMeshes == null)
                 LoadMesh();
@@ -261,38 +260,11 @@ namespace Assets.Scripts.Model.Game
         {
             foreach (Face face in faces)
             {
-                switch (face.IndexCount)
+                for(int i = 1; i+1 < face.IndexCount; i++)
                 {
-                    case 3:
-                        yield return (int)face.Indices[0];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[1];
-                        break;
-                    case 4:
-                        yield return (int)face.Indices[0];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[1];
-
-                        yield return (int)face.Indices[3];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[0];
-                        break;
-                    case 5:
-                        yield return (int)face.Indices[0];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[1];
-
-                        yield return (int)face.Indices[3];
-                        yield return (int)face.Indices[2];
-                        yield return (int)face.Indices[0];
-
-                        yield return (int)face.Indices[4];
-                        yield return (int)face.Indices[3];
-                        yield return (int)face.Indices[0];
-                        break;
-                    default:
-                        //Debug.LogWarning($"not implemented: more than 5 vertices in one face! vertices found: {face.IndexCount}");
-                        break;
+                    yield return face.Indices[i+1];
+                    yield return face.Indices[i];
+                    yield return face.Indices[0];
                 }
             }
         }
