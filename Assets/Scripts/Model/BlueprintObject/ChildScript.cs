@@ -10,13 +10,15 @@ using UnityEngine;
 
 namespace Assets.Scripts.Model.BlueprintObject
 {
-    public class ChildObject : MonoBehaviour
+    public class ChildScript : MonoBehaviour // ShapeScript needs to be made that applies for blocks, parts & joints
     {
         public Shape shape;
 
         public Vector3 rotatedBounds;
         public int xaxis;
         public int zaxis;
+
+        public List<JointScript> connectedJoints;
 
         [ContextMenu("rotation")]
         void SetRotationDebug()
@@ -72,7 +74,7 @@ namespace Assets.Scripts.Model.BlueprintObject
             //throw new NotImplementedException();
         }
 
-        public virtual void SetBlueprintRotation(int xaxis, int zaxis)
+        public void SetBlueprintRotation(int xaxis, int zaxis)
         {
             this.xaxis = xaxis;
             this.zaxis = zaxis;
@@ -96,11 +98,11 @@ namespace Assets.Scripts.Model.BlueprintObject
         }
 
 
-        public virtual (int,int,int) GetBlueprintPosition() //fkd in joints
+        public virtual Vector3Int GetBlueprintPosition() //fkd in joints
         {
             return default;
         }
-        public (int,int) GetBlueprintRotation()
+        public Vector2Int GetBlueprintRotation()
         {
             return default;
         }

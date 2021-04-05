@@ -6,9 +6,9 @@ using UnityEngine;
 
 namespace Assets.Scripts.Model.BlueprintObject
 {
-    public class BodyObject : MonoBehaviour
+    public class BodyScript : MonoBehaviour
     {
-        public List<ChildObject> Childs = new List<ChildObject>();
+        public List<ChildScript> Childs = new List<ChildScript>();
 
     }
 }

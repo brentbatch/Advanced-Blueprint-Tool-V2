@@ -37,7 +37,7 @@ namespace Assets.Scripts.Model.Data
         public string Color { get; set; }
 
         [JsonProperty("joints")]
-        public List<Joint> Joints { get; set; }
+        public List<JointReference> Joints { get; set; }
 
         [JsonProperty("pos")]
         public Pos Pos { get; set; }
@@ -56,26 +56,8 @@ namespace Assets.Scripts.Model.Data
     }
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
-    public class Joint
+    public class Joint // blueprint.joints[]
     {
-        [JsonProperty("id")]
-        public int Id { get; set; }
-
-        [JsonProperty("reverse")]
-        public object Reverse { get; set; }
-
-        [JsonProperty("endAngle")]
-        public int? EndAngle { get; set; }
-
-        [JsonProperty("frames")]
-        public List<Frame> Frames { get; set; }
-
-        [JsonProperty("index")]
-        public int? Index { get; set; }
-
-        [JsonProperty("startAngle")]
-        public int? StartAngle { get; set; }
-
         [JsonProperty("childA")]
         public int ChildA { get; set; }
 
@@ -84,6 +66,12 @@ namespace Assets.Scripts.Model.Data
 
         [JsonProperty("color")]
         public string Color { get; set; }
+
+        [JsonProperty("controller")]
+        public Controller Controller { get; set; }
+
+        [JsonProperty("id")]
+        public int Id { get; set; }
 
         [JsonProperty("posA")]
         public Pos PosA { get; set; }
@@ -105,95 +93,125 @@ namespace Assets.Scripts.Model.Data
 
         [JsonProperty("zaxisB")]
         public int ZaxisB { get; set; }
+    }
 
-        [JsonProperty("controller")]
-        public Controller Controller { get; set; }
+    [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
+    public class JointReference // child.joints[]
+    {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
+        [JsonProperty("reverse")]
+        public bool? Reverse { get; set; }
     }
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
     public class Controller
     {
         [JsonProperty("containers")]
-        public List<ControllerContainer> Containers { get; set; }
+        public List<ControllerContainer> Containers { get; set; } // shape (controller)
 
         [JsonProperty("controllers")]
-        public List<ControllerController> Controllers { get; set; }
+        public List<ControllerController> Controllers { get; set; } // shape (controller)
 
         [JsonProperty("data")]
-        public string Data { get; set; }
+        public string Data { get; set; } // random shit im not parsing for scripted or nonscripted parts ¯\_(ツ)_/¯
 
         [JsonProperty("id")]
         public int Id { get; set; }
 
         [JsonProperty("joints")]
-        public List<Joint> Joints { get; set; }
+        public List<ControllerJoint> Joints { get; set; }
 
         [JsonProperty("audioEnabled")]
-        public bool? AudioEnabled { get; set; }
+        public bool? AudioEnabled { get; set; } // totebot heads
 
         [JsonProperty("buttonMode")]
-        public bool? ButtonMode { get; set; }
+        public bool? ButtonMode { get; set; } // sensor
 
         [JsonProperty("color")]
-        public string Color { get; set; }
+        public string Color { get; set; } // for sensor, what color does it check
 
         [JsonProperty("colorMode")]
-        public bool? ColorMode { get; set; }
+        public bool? ColorMode { get; set; } // sensor
 
         [JsonProperty("range")]
-        public int? Range { get; set; }
+        public int? Range { get; set; } // sensor
 
         [JsonProperty("active")]
-        public bool? Active { get; set; }
+        public bool? Active { get; set; } // logic gate
 
         [JsonProperty("pitch")]
-        public double? Pitch { get; set; }
+        public double? Pitch { get; set; } // totebot heads
 
         [JsonProperty("mode")]
-        public int? Mode { get; set; }
+        public int? Mode { get; set; } // logic gate
 
         [JsonProperty("seconds")]
-        public int? Seconds { get; set; }
+        public int? Seconds { get; set; } // timer
 
         [JsonProperty("ticks")]
-        public int? Ticks { get; set; }
+        public int? Ticks { get; set; } // timer
 
         [JsonProperty("audioIndex")]
-        public int? AudioIndex { get; set; }
+        public int? AudioIndex { get; set; } // totebot heads
 
         [JsonProperty("volume")]
-        public int? Volume { get; set; }
+        public int? Volume { get; set; } // totebot heads
 
         [JsonProperty("coneAngle")]
-        public int? ConeAngle { get; set; }
+        public int? ConeAngle { get; set; } // light
 
         [JsonProperty("luminance")]
-        public int? Luminance { get; set; }
+        public int? Luminance { get; set; } // light
 
         [JsonProperty("steering")]
-        public object Steering { get; set; }
+        public ControllerSteering Steering { get; set; } // driverseat
 
         [JsonProperty("playMode")]
-        public int? PlayMode { get; set; }
+        public int? PlayMode { get; set; } // controller
 
         [JsonProperty("timePerFrame")]
-        public double? TimePerFrame { get; set; }
+        public double? TimePerFrame { get; set; } // controller
 
         [JsonProperty("stiffnessLevel")]
-        public int StiffnessLevel { get; set; }
+        public int StiffnessLevel { get; set; } // joint (spring)
 
         [JsonProperty("length")]
-        public int? Length { get; set; }
+        public int? Length { get; set; } // joint (piston)
 
         [JsonProperty("speed")]
-        public int? Speed { get; set; }
+        public int? Speed { get; set; } // joint (piston)
     }
 
+    [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
+    public class ControllerSteering
+    {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
+        [JsonProperty("leftAngleLimit")]
+        public double LeftAngleLimit { get; set; }
+
+        [JsonProperty("leftAngleSpeed")]
+        public double LeftAngleSpeed { get; set; }
+
+        [JsonProperty("rightAngleLimit")]
+        public double RightAngleLimit { get; set; }
+
+        [JsonProperty("rightAngleSpeed")]
+        public double RightAngleSpeed { get; set; }
+
+        [JsonProperty("unlocked")]
+        public bool Unlocked { get; set; }
+    } // a driverseat property
+
+    #region child/joint.controller.container stuff
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
     public class ControllerContainer
     {
         [JsonProperty("container")]
-        public List<ContainerContainer> Container { get; set; }
+        public List<Container> Container { get; set; }
 
         [JsonProperty("filters")]
         public List<Filter> Filters { get; set; }
@@ -209,7 +227,7 @@ namespace Assets.Scripts.Model.Data
     }
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
-    public class ContainerContainer
+    public class Container
     {
         [JsonProperty("quantity")]
         public int Quantity { get; set; }
@@ -224,29 +242,61 @@ namespace Assets.Scripts.Model.Data
         [JsonProperty("uuid")]
         public string Uuid { get; set; }
     }
+    #endregion
 
+    #region child/joint.controller.controllers stuff
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
-    public class ControllerController
+    public class ControllerController // almost only used for the 'id' part, but when on a 'controller' shape Frames and Index is also used.
     {
         [JsonProperty("id")]
         public int Id { get; set; }
 
         [JsonProperty("frames")]
-        public List<Frame> Frames { get; set; }
+        public List<ControllerControllerFrame> Frames { get; set; }
 
         [JsonProperty("index")]
-        public int? Index { get; set; }
+        public int Index { get; set; }
     }
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
-    public class Frame
+    public class ControllerControllerFrame
     {
         [JsonProperty("setting")]
         public int Setting { get; set; }
+    }
+    #endregion
 
+    #region child/joint.controller.joint stuff
+    [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
+    public class ControllerJoint // almost only used for the 'id' part, but when on a 'controller' shape Frames and Index is also used.
+    {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
+        [JsonProperty("reverse")]
+        public bool Reverse { get; set; }
+
+        [JsonProperty("frames")]
+        public List<ControllerJointFrame> Frames { get; set; }
+
+        [JsonProperty("index")]
+        public int Index { get; set; }
+
+        [JsonProperty("startAngle")]
+        public int StartAngle { get; set; }
+
+        [JsonProperty("endAngle")]
+        public int EndAngle { get; set; }
+    }
+
+    [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
+    public class ControllerJointFrame
+    {
         [JsonProperty("targetAngle")]
         public int TargetAngle { get; set; }
     }
+
+    #endregion
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
     public class Pos

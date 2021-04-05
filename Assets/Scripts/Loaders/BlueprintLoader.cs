@@ -25,7 +25,7 @@ namespace Assets.Scripts.Loaders
         public SimpleObjectPool buttonObjectPool;
 
         public static BlueprintButton SelectedBlueprintButton;
-        public static BlueprintObject blueprintObject;
+        public static BlueprintScript blueprintObject;
 
         public Camera Camera;
 
@@ -134,28 +134,29 @@ namespace Assets.Scripts.Loaders
 
 
                 rootGameObject = Instantiate(Constants.Instance.Blueprint);
-                BlueprintObject newblueprintObject = rootGameObject.GetComponent<BlueprintObject>();
+                BlueprintScript blueprintScript = rootGameObject.GetComponent<BlueprintScript>();
 
                 foreach (var body in blueprintData.Bodies)
                 {
                     GameObject bodyGameObject = Instantiate(Constants.Instance.Body, rootGameObject.transform);
-                    BodyObject bodyObject = bodyGameObject.GetComponent<BodyObject>();
+                    BodyScript bodyScript = bodyGameObject.GetComponent<BodyScript>();
 
-                    newblueprintObject.Bodies.Add(bodyObject);
+                    blueprintScript.Bodies.Add(bodyScript);
                     foreach (var child in body.Childs)
                     {
-                        bodyObject.Childs.Add(CreateChildObject(child, bodyGameObject));
+                        bodyScript.Childs.Add(CreateChildObject(child, bodyGameObject));
                     }
                 }
                 if (blueprintData.Joints != null)
                 {
                     foreach (var joint in blueprintData.Joints)
                     {
-                        newblueprintObject.Joints.Add(CreateJointObject(joint, rootGameObject));
+                        blueprintScript.Joints.Add(CreateJointObject(joint, rootGameObject));
                     }
                 }
-
-                var destination = newblueprintObject.Bodies[0].Childs[0].gameObject.transform.position - Camera.transform.forward * 10;
+                
+                var center = blueprintScript.CalculateCenter();
+                var destination = center - Camera.transform.forward * 10;
 
                 var cameraState = Camera.GetComponent<UnityTemplateProjects.SimpleCameraController>().m_TargetCameraState;
 
@@ -163,18 +164,17 @@ namespace Assets.Scripts.Loaders
                 cameraState.y = destination.y;
                 cameraState.z = destination.z;
 
-                BlueprintLoader.blueprintObject = newblueprintObject;
-                Debug.Log("loaded bp");
+                BlueprintLoader.blueprintObject = blueprintScript;
+                Debug.Log("successfully loaded bp");
             }
             catch (Exception e)
             {
                 Debug.LogError($"an error occurred while loading this blueprint.\nError: {e}\n\nStackTrace:{StackTraceUtility.ExtractStringFromException(e)}");
                 if(rootGameObject != null)
                 {
-                    Debug.Log("destroying broken build blueprint");
+                    Debug.Log("failed loading blueprint");
                     Destroy(rootGameObject);
                 }
-
             }
         }
 
@@ -194,13 +194,13 @@ namespace Assets.Scripts.Loaders
             throw new NotImplementedException();
         }
 
-        private ChildObject CreateChildObject(Child child, GameObject parent)
+        private ChildScript CreateChildObject(Child child, GameObject parent)
         {
             Shape shape = PartLoader.GetShape(child);
 
             GameObject GameObject = shape.Instantiate(parent.transform);
 
-            ChildObject childScript = GameObject.AddComponent<ChildObject>();
+            ChildScript childScript = GameObject.AddComponent<ChildScript>();
             childScript.shape = shape;
 
             childScript.SetColor(child.Color);
@@ -219,13 +219,13 @@ namespace Assets.Scripts.Loaders
             return childScript;
         }
 
-        private JointObject CreateJointObject(Joint joint, GameObject parent)
+        private JointScript CreateJointObject(Joint joint, GameObject parent)
         {
             Shape shape = PartLoader.GetJoint(joint);
 
             GameObject gameObject = shape.Instantiate(parent.transform);
 
-            JointObject jointScript = gameObject.AddComponent<JointObject>();
+            JointScript jointScript = gameObject.AddComponent<JointScript>();
             jointScript.shape = shape;
 
             jointScript.SetColor(joint.Color);
