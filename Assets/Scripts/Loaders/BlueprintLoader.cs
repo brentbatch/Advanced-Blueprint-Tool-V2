@@ -154,16 +154,19 @@ namespace Assets.Scripts.Loaders
                         blueprintScript.Joints.Add(CreateJointObject(joint, rootGameObject));
                     }
                 }
-                
-                var center = blueprintScript.CalculateCenter();
-                var destination = center - Camera.transform.forward * 10;
 
+                ArrangeJointReferencesUsingData(blueprintScript, blueprintData);
+
+                #region handle camera position
+                var center = blueprintScript.CalculateCenter();
+                var destination = center - Camera.transform.forward * 15;
                 var cameraState = Camera.GetComponent<UnityTemplateProjects.SimpleCameraController>().m_TargetCameraState;
 
                 cameraState.x = destination.x;
                 cameraState.y = destination.y;
                 cameraState.z = destination.z;
-
+                #endregion
+                
                 BlueprintLoader.blueprintObject = blueprintScript;
                 Debug.Log("successfully loaded bp");
             }
@@ -203,6 +206,7 @@ namespace Assets.Scripts.Loaders
             ChildScript childScript = GameObject.AddComponent<ChildScript>();
             childScript.shape = shape;
 
+            childScript.Controller = child.Controller;
             childScript.SetColor(child.Color);
 
             if (!Constants.Instance.potatoMode)
@@ -224,9 +228,12 @@ namespace Assets.Scripts.Loaders
             Shape shape = PartLoader.GetJoint(joint);
 
             GameObject gameObject = shape.Instantiate(parent.transform);
-
+            
             JointScript jointScript = gameObject.AddComponent<JointScript>();
             jointScript.shape = shape;
+
+            jointScript.Id = joint.Id;
+            jointScript.Controller = joint.Controller; // todo: this is not gud
 
             jointScript.SetColor(joint.Color);
 
@@ -241,7 +248,33 @@ namespace Assets.Scripts.Loaders
             return jointScript;
         }
 
+        private void ArrangeJointReferencesUsingData(BlueprintScript blueprintScript, BlueprintData blueprintData)
+        {
+            var dtstart = DateTime.Now;
 
+            // child -> joint is a bit of a pain because scriptchild knows nothing of joints[]
+            int childIndex = 0;
+            IEnumerable<Child> flatDataChildList = blueprintData.Bodies.SelectMany(body => body.Childs).Select(child => child);
+            var flatLiveChildList = blueprintScript.Bodies.SelectMany(body => body.Childs).Select(child => child).ToList();
+            
+            foreach (var child in flatDataChildList)
+            {
+                if (child.Joints?.Count > 0)
+                {
+                    var childScript = flatLiveChildList[childIndex];
+
+                }
+                childIndex++;
+            }
+
+            IEnumerable<Joint> flatDataJointList = blueprintData.Joints;
+            var flatLiveJointsList = blueprintScript.Joints;
+
+            // do the same like above
+
+            var dt = DateTime.Now - dtstart;
+            Debug.Log($"arrangejoints took {dt.TotalMilliseconds} ms");
+        }
 
     }
 }

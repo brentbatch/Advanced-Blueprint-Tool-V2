@@ -10,15 +10,20 @@ using UnityEngine;
 
 namespace Assets.Scripts.Model.BlueprintObject
 {
-    public class ChildScript : MonoBehaviour // ShapeScript needs to be made that applies for blocks, parts & joints
+    // todo:
+    // ShapeScript needs to be made that applies for blocks, parts & joints
+    // blueprintPosition {get; set;} property
+    public class ChildScript : MonoBehaviour 
     {
+        public List<JointScript> connectedJoints;
         public Shape shape;
 
-        public Vector3 rotatedBounds;
-        public int xaxis;
+        public Vector3Int RotatedBounds { get; set; }
+        public Controller Controller { get; set; }
+
+        public int xaxis; // debug
         public int zaxis;
 
-        public List<JointScript> connectedJoints;
 
         [ContextMenu("rotation")]
         void SetRotationDebug()
@@ -38,13 +43,9 @@ namespace Assets.Scripts.Model.BlueprintObject
             }
         }
 
-
         public void SetBlueprintPosition(Pos pos) // y and z reversed
         {
-            var transform = gameObject.transform;
-            var position = transform.position;
-            (position.x, position.y, position.z) = (pos.X, pos.Z, pos.Y);
-            transform.position = position;
+            transform.position = new Vector3Int(pos.X, pos.Z, pos.Y);
         }
 
         public void SetBlueprintBounds(Data.Bounds bounds) // y and z reversed
@@ -54,24 +55,16 @@ namespace Assets.Scripts.Model.BlueprintObject
                 Debug.LogWarning($"Trying to set bounds on a child that is a part!");
                 return;
             }
-            var childMesh = gameObject.transform.GetChild(0);
+            var childMesh = transform.GetChild(0);
             var scale = childMesh.transform.localScale;
             (scale.x, scale.y, scale.z) = (bounds.X, bounds.Z, bounds.Y);
 
             childMesh.transform.localScale = scale;
             childMesh.transform.localPosition = scale / 2;
 
-            var collider = gameObject.GetComponent<BoxCollider>();
+            var collider = GetComponent<BoxCollider>();
             collider.size = scale;
             collider.center = scale / 2;
-        }
-
-        /// <summary>
-        /// use rotated bounds for features.
-        /// </summary>
-        protected void CalculateRotatedBounds()
-        {
-            //throw new NotImplementedException();
         }
 
         public void SetBlueprintRotation(int xaxis, int zaxis)
@@ -92,19 +85,28 @@ namespace Assets.Scripts.Model.BlueprintObject
             CalculateRotatedBounds();
         }
 
+        public virtual (int, int, int) GetBlueprintPosition() //fkd in joints
+        {
+            return (Mathf.RoundToInt(transform.position.x), Mathf.RoundToInt(transform.position.z), Mathf.RoundToInt(transform.position.y));
+        }
+        public (int, int) GetBlueprintRotation()
+        {
+            int xaxis = Mathf.RoundToInt(transform.right.x + transform.right.z * -2 + transform.right.y * 3);
+            int zaxis = Mathf.RoundToInt(transform.up.x + transform.up.z * -2 + transform.up.y * 3);
+            return (xaxis, zaxis);
+        }
+
+        /// <summary>
+        /// use rotated bounds for features.
+        /// </summary>
+        protected void CalculateRotatedBounds()
+        {
+            //throw new NotImplementedException();
+        }
+
         public void Rotate()
         {
 
-        }
-
-
-        public virtual Vector3Int GetBlueprintPosition() //fkd in joints
-        {
-            return default;
-        }
-        public Vector2Int GetBlueprintRotation()
-        {
-            return default;
         }
     }
 }

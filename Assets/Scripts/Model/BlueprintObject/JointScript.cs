@@ -5,8 +5,10 @@ namespace Assets.Scripts.Model.BlueprintObject
 {
     public class JointScript : ChildScript
     {
-        public ChildScript childA;
-        public ChildScript childB;
+        public int Id { get; set; }
+        public ChildScript childA { get; set; }
+        public ChildScript childB { get; set; }
+
 
         [ContextMenu("rotation")]
         void SetRotationDebug()
@@ -14,16 +16,13 @@ namespace Assets.Scripts.Model.BlueprintObject
             this.SetBlueprintRotation(this.xaxis, this.zaxis);
         }
 
-
-        public override Vector3Int GetBlueprintPosition() //fkd in joints
+        public override (int, int, int) GetBlueprintPosition() //fkd in joints
         {
-            Vector2Int xzaxis = this.GetBlueprintRotation();
-            Vector3Int offset = GetRotationPositionOffset(xzaxis.x, xzaxis.y);
+            (int xaxis, int zaxis) = this.GetBlueprintRotation();
+            Vector3Int offset = GetRotationPositionOffset(xaxis, zaxis);
             // re-hack position offset:
-            
-            // get and offset position property
-
-            return default;
+            var position = transform.position - offset;
+            return (Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.z), Mathf.RoundToInt(position.y));
         }
 
         public void DoRotationPositionOffset(int xaxis, int zaxis) 
