@@ -53,5 +53,10 @@ namespace Assets.Scripts.Model.BlueprintObject
             return offset;
         }
 
+        public override void Destroy()
+        {
+            UnityEngine.GameObject.Destroy(gameObject);
+            // nothing else for now
+        }
     }
 }

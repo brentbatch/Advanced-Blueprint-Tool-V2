@@ -136,6 +136,8 @@ namespace Assets.Scripts.Loaders
                 rootGameObject = Instantiate(Constants.Instance.Blueprint);
                 BlueprintScript blueprintScript = rootGameObject.GetComponent<BlueprintScript>();
 
+                int shapeIdx = 0;
+
                 foreach (var body in blueprintData.Bodies)
                 {
                     GameObject bodyGameObject = Instantiate(Constants.Instance.Body, rootGameObject.transform);
@@ -144,7 +146,11 @@ namespace Assets.Scripts.Loaders
                     blueprintScript.Bodies.Add(bodyScript);
                     foreach (var child in body.Childs)
                     {
-                        bodyScript.Childs.Add(CreateChildObject(child, bodyGameObject));
+                        ChildScript childScript = CreateChildObject(child, bodyGameObject);
+                        childScript.shapeIdx = shapeIdx;
+                        childScript.Body = bodyScript;
+
+                        bodyScript.Childs.Add(childScript);
                     }
                 }
                 if (blueprintData.Joints != null)
@@ -172,7 +178,7 @@ namespace Assets.Scripts.Loaders
             }
             catch (Exception e)
             {
-                Debug.LogError($"an error occurred while loading this blueprint.\nError: {e}\n\nStackTrace:{StackTraceUtility.ExtractStringFromException(e)}");
+                Debug.LogError($"an error occurred while loading this blueprint.\nError: {e}\n\nStackTrace:{e.StackTrace}");
                 if(rootGameObject != null)
                 {
                     Debug.Log("failed loading blueprint");
@@ -248,29 +254,118 @@ namespace Assets.Scripts.Loaders
             return jointScript;
         }
 
+        /// <summary>
+        /// create child - joint references so both know what they are connected to
+        /// </summary>
+        /// <param name="blueprintScript"></param>
+        /// <param name="blueprintData"></param>
         private void ArrangeJointReferencesUsingData(BlueprintScript blueprintScript, BlueprintData blueprintData)
         {
+            Debug.Log($"Arranging child-joint connection references");
             var dtstart = DateTime.Now;
 
             // child -> joint is a bit of a pain because scriptchild knows nothing of joints[]
             int childIndex = 0;
             IEnumerable<Child> flatDataChildList = blueprintData.Bodies.SelectMany(body => body.Childs).Select(child => child);
-            var flatLiveChildList = blueprintScript.Bodies.SelectMany(body => body.Childs).Select(child => child).ToList();
-            
-            foreach (var child in flatDataChildList)
-            {
-                if (child.Joints?.Count > 0)
-                {
-                    var childScript = flatLiveChildList[childIndex];
+            List<ChildScript> flatLiveChildList = blueprintScript.Bodies.SelectMany(body => body.Childs).Select(child => child).ToList();
 
+            IEnumerable<Joint> flatDataJointList = blueprintData.Joints;
+            List<JointScript> flatLiveJointsList = blueprintScript.Joints;
+
+            if (blueprintData.Joints == null || blueprintData.Joints.Count == 0)
+            {
+                Debug.Log($"no joints found, skipping reference step");
+                return;
+            }
+
+            foreach (Child childData in flatDataChildList)
+            {
+                if (childData.Joints?.Count > 0)
+                {
+                    ChildScript childScript = flatLiveChildList[childIndex];
+                    childScript.connectedJoints = new List<JointScript>();
+                    foreach(JointReference jointRef in childData.Joints)
+                    {
+                        JointScript jointScript = flatLiveJointsList.FirstOrDefault(joint => joint.Id == jointRef.Id);
+                        if (jointScript == default)
+                        {
+                            Debug.LogWarning($"child.joints: reference to missing joint!");
+                            continue;
+                        }
+
+                        childScript.connectedJoints.Add(jointScript);
+
+                        // connect that joint to this child if it has the data to connect to this child:
+                        Joint jointData = flatDataJointList.FirstOrDefault(joint => joint.Id == jointRef.Id);
+                        if (jointData.ChildA == childScript.shapeIdx)
+                        {
+                            jointScript.childA = childScript;
+                        }
+                        if (jointData.ChildB == childScript.shapeIdx)
+                        {
+                            jointScript.childB = childScript;
+                        }
+                    }
                 }
                 childIndex++;
             }
 
-            IEnumerable<Joint> flatDataJointList = blueprintData.Joints;
-            var flatLiveJointsList = blueprintScript.Joints;
+            Debug.Log($"Verifying joint-child connection references");
+            // verify connections, perspective: joint
+            int jointIndex = 0;
+            foreach (Joint jointData in flatDataJointList)
+            {
+                JointScript jointScript = flatLiveJointsList[jointIndex];
 
-            // do the same like above
+                if (jointData.ChildA == -1 || jointData.ChildA >= flatLiveChildList.Count)
+                {
+                    if (jointScript.childA == null)
+                    {
+                        Debug.LogError($"Invalid joint.childA information. Attempting fix");
+
+                        // todo: attempt fix: find child(s) that is connected to this jointscript, 1 child: childA, 2 childs: check childB || error
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Invalid joint.childA information. resolved with joint.childA info!");
+                    }
+                }
+                else
+                {
+                    ChildScript childScriptA = flatLiveChildList[jointData.ChildA];
+                    if (childScriptA.connectedJoints == null)
+                        childScriptA.connectedJoints = new List<JointScript>();
+
+                    if (!childScriptA.connectedJoints.Contains(jointScript))
+                    {
+                        Debug.LogWarning($"child.joints had missing information. resolving with joint.childA info!");
+                        childScriptA.connectedJoints.Add(jointScript);
+                    }
+                }
+
+                if (jointData.ChildB == -1 || jointData.ChildB >= flatLiveChildList.Count)
+                {
+                    if (jointScript.childB != null)
+                        Debug.LogWarning($"joint.childB had invalid information! resolved via child.joints!"); // 'recovered' in prev step
+                    continue;
+                }
+                else
+                {
+                    ChildScript childScriptB = flatLiveChildList[jointData.ChildB];
+                    if (childScriptB.connectedJoints == null)
+                        childScriptB.connectedJoints = new List<JointScript>();
+
+                    if (!childScriptB.connectedJoints.Contains(jointScript))
+                    {
+                        Debug.LogWarning($"child.joints had missing information. resolving with joint.childA info!");
+                        childScriptB.connectedJoints.Add(jointScript);
+                    }
+                }
+                jointIndex++;
+            }
+
+            // todo: to be complete there should be another verify run on all childs to check if connected joints actually reference them back.
+
 
             var dt = DateTime.Now - dtstart;
             Debug.Log($"arrangejoints took {dt.TotalMilliseconds} ms");

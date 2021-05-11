@@ -171,7 +171,7 @@ namespace Assets.Scripts.Model.Game
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed loading model for part {partData.Uuid}\nError: {e} \nTrace: {StackTraceUtility.ExtractStringFromException(e)}");
+                Debug.LogError($"Failed loading model for part {partData.Uuid}\nError: {e} \nTrace: {e.StackTrace}");
                 // use cuboid from prefab, stretch if bounds found in partdata
                 // use diffuse & normal from prefab
             }
@@ -235,7 +235,7 @@ namespace Assets.Scripts.Model.Game
             }
             catch(Exception e)
             {
-                Debug.LogError($"Failed loading textures for part {partData.Uuid}\nError: {e} \nTrace: {StackTraceUtility.ExtractStringFromException(e)}");
+                Debug.LogError($"Failed loading textures for part {partData.Uuid}\nError: {e} \nTrace: {e.StackTrace}");
 
             }
         }

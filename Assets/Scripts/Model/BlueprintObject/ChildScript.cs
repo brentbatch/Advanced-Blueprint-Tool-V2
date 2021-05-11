@@ -15,15 +15,16 @@ namespace Assets.Scripts.Model.BlueprintObject
     // blueprintPosition {get; set;} property
     public class ChildScript : MonoBehaviour 
     {
+        public BodyScript Body { get; set; }
         public List<JointScript> connectedJoints;
         public Shape shape;
+        public int shapeIdx;
 
         public Vector3Int RotatedBounds { get; set; }
         public Controller Controller { get; set; }
 
         public int xaxis; // debug
         public int zaxis;
-
 
         [ContextMenu("rotation")]
         void SetRotationDebug()
@@ -95,6 +96,28 @@ namespace Assets.Scripts.Model.BlueprintObject
             int zaxis = Mathf.RoundToInt(transform.up.x + transform.up.z * -2 + transform.up.y * 3);
             return (xaxis, zaxis);
         }
+
+        public virtual void Destroy()
+        {
+            if (connectedJoints != null)
+            {
+                var joints = connectedJoints.ToArray();
+                connectedJoints = null;
+                foreach (JointScript joint in joints)
+                {
+                    if (joint.childA == this)
+                    {
+                        joint.Destroy();
+                    }
+                    if (joint.childB == this)
+                    {
+                        joint.childB = null;
+                    }
+                }
+            }
+            UnityEngine.GameObject.Destroy(gameObject);
+        }
+
 
         /// <summary>
         /// use rotated bounds for features.
