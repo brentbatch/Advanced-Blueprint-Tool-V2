@@ -51,19 +51,19 @@ namespace Assets.Scripts.Model.Game
             var material = gameObject.GetComponentInChildren<MeshRenderer>().material;
 
             var texInfo = TextureInfoList[0];
-            if (texInfo.diffuse != null)
+            if (!string.IsNullOrWhiteSpace(texInfo.diffuse))
             {
                 TextureLoader.Instance.GetTextureAndDoAction(
                     TextureInfoList[0].diffuse,
                     (Texture2D tex) => material.SetTexture("_MainTex", tex));
             }
-            if (texInfo.normal != null)
+            if (!string.IsNullOrWhiteSpace(texInfo.normal))
             {
                 TextureLoader.Instance.GetTextureAndDoAction(
                     TextureInfoList[0].normal,
                     (Texture2D tex) => material.SetTexture("_NorTex", tex));
             }
-            if (texInfo.asg != null)
+            if (!string.IsNullOrWhiteSpace(texInfo.asg))
             {
                 TextureLoader.Instance.GetTextureAndDoAction(
                     TextureInfoList[0].asg,

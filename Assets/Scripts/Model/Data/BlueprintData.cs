@@ -166,7 +166,7 @@ namespace Assets.Scripts.Model.Data
         public int? Luminance { get; set; } // light
 
         [JsonProperty("steering")]
-        public ControllerSteering Steering { get; set; } // driverseat
+        public List<ControllerSteering> Steering { get; set; } // driverseat
 
         [JsonProperty("playMode")]
         public int? PlayMode { get; set; } // controller
