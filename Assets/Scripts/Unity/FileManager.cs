@@ -19,7 +19,7 @@ public class FileManager : MonoBehaviour
 
     private void Start()
     {
-        PathResolver.FindPaths();
+
     }
     public void Open()
     {

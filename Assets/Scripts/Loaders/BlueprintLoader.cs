@@ -151,6 +151,7 @@ namespace Assets.Scripts.Loaders
                         childScript.Body = bodyScript;
 
                         bodyScript.Childs.Add(childScript);
+                        shapeIdx++;
                     }
                 }
                 if (blueprintData.Joints != null)
@@ -185,6 +186,18 @@ namespace Assets.Scripts.Loaders
                     Destroy(rootGameObject);
                 }
             }
+        }
+
+        /// <summary>
+        /// click event that saves the blueprint
+        /// </summary>
+        public void SaveBlueprint()
+        {
+            // todo
+
+
+
+
         }
 
         /// <summary>
@@ -310,7 +323,7 @@ namespace Assets.Scripts.Loaders
                 childIndex++;
             }
 
-            Debug.Log($"Verifying joint-child connection references");
+            //Debug.Log($"Verifying joint-child connection references");
             // verify connections, perspective: joint
             int jointIndex = 0;
             foreach (Joint jointData in flatDataJointList)
@@ -346,8 +359,13 @@ namespace Assets.Scripts.Loaders
                 if (jointData.ChildB == -1 || jointData.ChildB >= flatLiveChildList.Count)
                 {
                     if (jointScript.childB != null)
+                    {
                         Debug.LogWarning($"joint.childB had invalid information! resolved via child.joints!"); // 'recovered' in prev step
-                    continue;
+                    }
+                    else
+                    {
+                        // todo: attempt fix: find child(s) that is connected to this jointscript, 1 child: childA, 2 childs: check childB || error 
+                    }
                 }
                 else
                 {

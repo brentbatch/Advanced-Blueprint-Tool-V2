@@ -75,6 +75,8 @@ namespace Assets.Scripts.Model.Game
         {
             if (partData.Box != null)
                 this.bounds = new Vector3(partData.Box.X, partData.Box.Z, partData.Box.Y);
+            if (partData.Sphere != null)
+                this.bounds = new Vector3(partData.Sphere.Diameter, partData.Sphere.Diameter, partData.Sphere.Diameter);
             if (partData.Hull != null)
             {
                 this.bounds = new Vector3(partData.Hull.X, partData.Hull.Z, partData.Hull.Y);
