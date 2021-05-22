@@ -26,6 +26,8 @@ namespace Assets.Scripts.Unity
 
         public bool potatoMode = false;
 
+        // paths:
+        public string upgradeResourcesPath = "$Game_data/upgrade_resources.json";
 
         public void Awake()
         {

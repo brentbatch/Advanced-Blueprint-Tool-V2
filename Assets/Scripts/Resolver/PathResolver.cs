@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Model.Data;
+using Assets.Scripts.Unity;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -29,6 +30,7 @@ public static class PathResolver
             OnPathsLoaded += task;
     }*/
 
+    private static UpgradeResolver upgradeResolver;
     private static readonly Dictionary<string, string> workshopModUuids = new Dictionary<string, string>(); // todo: fill this array
     private static string scrapMechanicPath;
     private static string scrapDataPath;
@@ -53,15 +55,28 @@ public static class PathResolver
         get
         {
             if (workShopPath == null)
-                FindPaths();
+                Initialize();
             return workShopPath;
         }
         set => workShopPath = value;
     }
 
+    public static void Initialize()
+    {
+        FindAppdataPath();
+        FindPaths();
+        string upgradeFilePath = ResolvePath(Constants.Instance.upgradeResourcesPath);
+        upgradeResolver = new UpgradeResolver(upgradeFilePath);
+    }
+
     public static string ResolvePath(string path, string parentPath = null)
     {
+        if (upgradeResolver != null) // have to resolve the path for the upgraderesolver , so it will be null the first time.
+        {
+            path = upgradeResolver.UpgradeResource(path);
+        }
         path = path.ToLower().Replace(@"/", @"\");
+
         if (path.Contains(@"..\data") || path.Contains("$mod_data") || path.Contains("$content_data"))
         {
             if (parentPath == null)
@@ -72,7 +87,7 @@ public static class PathResolver
                 .Replace("$content_data", parentPath);
         }
         if (!pathsLoaded)
-            FindPaths();
+            Initialize();
 
         if (path.Contains("$content_data_"))
         {
@@ -112,9 +127,8 @@ public static class PathResolver
         return File.Exists(Path.Combine(path, "Release", "ScrapMechanic.exe"));
     }
 
-    public static void FindPaths()
+    private static void FindPaths()
     {
-        FindAppdataPath();
         string steamInstallationPath = "";
         try
         {
