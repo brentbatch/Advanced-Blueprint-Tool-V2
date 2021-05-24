@@ -100,9 +100,6 @@ namespace Assets.Scripts.Model.Data
     {
         [JsonProperty("id")]
         public int Id { get; set; }
-
-        [JsonProperty("reverse")]
-        public bool? Reverse { get; set; }
     }
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]

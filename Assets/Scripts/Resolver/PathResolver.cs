@@ -180,7 +180,7 @@ public static class PathResolver
         }
         catch (Exception e)
         {
-            Debug.LogError(e);
+            Debug.LogException(e);
         }
 
         string folder = steamInstallationPath == "" ? Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) : steamInstallationPath;

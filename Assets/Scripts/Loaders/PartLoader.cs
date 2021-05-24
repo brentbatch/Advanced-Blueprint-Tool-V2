@@ -102,7 +102,7 @@ namespace Assets.Scripts.Loaders
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"Could not load vanilla partlist/blocklist: {e}");
+                        Debug.LogException(new Exception($"\nCould not load vanilla partlist/blocklist", e));
                     }
                 });
             LoadLanguageFiles(Path.Combine(basePath, "Gui/Language"));
@@ -185,7 +185,7 @@ namespace Assets.Scripts.Loaders
             } 
             catch (Exception e)
             {
-                Debug.LogError($"Could not load translation data in {languageFolderPath}\nError: {e}");
+                Debug.LogException(new Exception($"\nCould not load translation data in {languageFolderPath}", e));
             }
         }
 

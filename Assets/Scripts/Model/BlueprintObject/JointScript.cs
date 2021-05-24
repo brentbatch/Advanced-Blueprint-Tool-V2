@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Assets.Scripts.Model.Game;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Assets.Scripts.Model.BlueprintObject
@@ -51,6 +54,41 @@ namespace Assets.Scripts.Model.BlueprintObject
                 offset.z = 1;
             }
             return offset;
+        }
+
+        internal Data.Joint ToBlueprintData(List<BodyScript> bodies) // z is up
+        {
+            Data.PartData partData = (this.shape as Part).partData;
+
+            List<ChildScript> childScripts = bodies.SelectMany(bodyScript => bodyScript.Childs).ToList();
+
+            (int x, int y, int z) = this.GetBlueprintPosition();
+
+            (int xaxis, int zaxis) = this.GetBlueprintRotation();
+
+            var zAbs = Math.Abs(zaxis);
+            var zSign = Math.Sign(zaxis);
+            int jointLength = partData.Bearing != null ? 0 : Mathf.RoundToInt(gameObject.GetComponent<BoxCollider>().size.y) * zSign;
+            (int offsetx, int offsety, int offsetz) = (zAbs == 1 ? jointLength : 0, zAbs == 2 ? jointLength : 0, zAbs == 3 ? jointLength : 0);
+
+
+            Data.Joint joint = new Data.Joint()
+            {
+                ChildA = childScripts.IndexOf(this.childA),
+                ChildB = this.childB == null ? -1 : childScripts.IndexOf(this.childB),
+                Color = this.GetColor(),
+                Controller = this.Controller,
+                Id = this.Id,
+                ShapeId = partData.Uuid,
+                PosA = new Data.Pos() { X = x, Y = y, Z = z},
+                PosB = this.childB == null ? null : new Data.Pos() { X = x + offsetx, Y = y + offsety, Z = z + offsetz },
+                XaxisA = xaxis,
+                XaxisB = xaxis,
+                ZaxisA = zaxis,
+                ZaxisB = zaxis
+            };
+
+            return joint;
         }
 
         public override void Destroy()

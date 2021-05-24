@@ -27,10 +27,19 @@ namespace Assets.Scripts.Model.BlueprintObject
 
         }
 
-        public Data.BlueprintData ToBlueprint()
+        public Data.BlueprintData ToBlueprintData()
         {
+            Data.BlueprintData blueprintData = new Data.BlueprintData()
+            {
+                Bodies = new List<Data.Body>(),
+                Joints = Joints.Count > 0 ? new List<Data.Joint>() : null,
+                Version = 3
+            };
 
-            throw new NotImplementedException();
+            blueprintData.Bodies = Bodies.Select(body => body.ToBlueprintData()).ToList();
+            blueprintData.Joints = Joints.Select(joint => joint.ToBlueprintData(Bodies)).ToList();
+
+            return blueprintData;
         }
 
         public Vector3 CalculateCenter()

@@ -15,7 +15,7 @@ namespace Assets.Scripts.Model.Game
 {
     public class Block : Shape
     {
-        protected BlockData blockData;
+        public BlockData blockData;
 
         public Block(BlockData blockData, ModContext mod = null) : base(mod) 
         {
@@ -105,7 +105,7 @@ namespace Assets.Scripts.Model.Game
             }
             catch (Exception e)
             {
-                Debug.LogError($"An error occurred when loading data for block {translation?.Title}\nError: {e}");
+                Debug.LogException(new Exception($"\nAn error occurred when loading data for block {translation?.Title}", e));
             }
         }
 

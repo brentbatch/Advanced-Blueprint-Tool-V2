@@ -18,7 +18,7 @@ namespace Assets.Scripts.Model.Game
     {
         private static AssimpContext assimpImporter = new AssimpContext();
 
-        protected PartData partData;
+        public PartData partData;
 
         public UnityEngine.Mesh[] pose0;
         public UnityEngine.Mesh[] pose1;
@@ -173,7 +173,7 @@ namespace Assets.Scripts.Model.Game
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed loading model for part {partData.Uuid}\nError: {e} \nTrace: {e.StackTrace}");
+                Debug.LogException(new Exception($"\nFailed loading model for part {partData.Uuid}", e));
                 // use cuboid from prefab, stretch if bounds found in partdata
                 // use diffuse & normal from prefab
             }
@@ -237,7 +237,7 @@ namespace Assets.Scripts.Model.Game
             }
             catch(Exception e)
             {
-                Debug.LogError($"Failed loading textures for part {partData.Uuid}\nError: {e} \nTrace: {e.StackTrace}");
+                Debug.LogException(new Exception($"\nFailed loading textures for part {partData.Uuid}", e));
 
             }
         }

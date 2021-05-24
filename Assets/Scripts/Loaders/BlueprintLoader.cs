@@ -5,6 +5,7 @@ using Assets.Scripts.Model.Data;
 using Assets.Scripts.Model.Game;
 using Assets.Scripts.Model.Unity;
 using Assets.Scripts.Unity;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -108,7 +109,7 @@ namespace Assets.Scripts.Loaders
                 }
                 catch(Exception e)
                 {
-                    Debug.LogError($"Error while refreshing blueprints: {e}");
+                    Debug.LogException(new Exception($"\nError while refreshing blueprints", e));
                 }
                 yield return new WaitForSeconds(10f);
             }
@@ -179,7 +180,7 @@ namespace Assets.Scripts.Loaders
             }
             catch (Exception e)
             {
-                Debug.LogError($"an error occurred while loading this blueprint.\nError: {e}\n\nStackTrace:{e.StackTrace}");
+                Debug.LogException(new Exception($"\nan error occurred while loading this blueprint.", e));
                 if(rootGameObject != null)
                 {
                     Debug.Log("failed loading blueprint");
@@ -193,8 +194,10 @@ namespace Assets.Scripts.Loaders
         /// </summary>
         public void SaveBlueprint()
         {
-            // todo
+            if (BlueprintLoader.blueprintObject == null)
+                return;
 
+            string blueprintDataStr = JsonConvert.SerializeObject(BlueprintLoader.blueprintObject.ToBlueprintData());
 
 
 
@@ -216,6 +219,8 @@ namespace Assets.Scripts.Loaders
             throw new NotImplementedException();
         }
 
+
+        // todo: move methods below to separate class
         private ChildScript CreateChildObject(Child child, GameObject parent)
         {
             Shape shape = PartLoader.GetShape(child);
@@ -334,13 +339,13 @@ namespace Assets.Scripts.Loaders
                 {
                     if (jointScript.childA == null)
                     {
-                        Debug.LogError($"Invalid joint.childA information. Attempting fix");
+                        Debug.LogError($"Invalid Joints! no joint.childA information. Attempting fix");
 
                         // todo: attempt fix: find child(s) that is connected to this jointscript, 1 child: childA, 2 childs: check childB || error
                     }
                     else
                     {
-                        Debug.LogWarning($"Invalid joint.childA information. resolved with joint.childA info!");
+                        Debug.LogWarning($"joint.childA had invalid information! resolved via child.joints!");
                     }
                 }
                 else
@@ -358,13 +363,14 @@ namespace Assets.Scripts.Loaders
 
                 if (jointData.ChildB == -1 || jointData.ChildB >= flatLiveChildList.Count)
                 {
-                    if (jointScript.childB != null)
+                    if (jointScript.childB == null)
                     {
-                        Debug.LogWarning($"joint.childB had invalid information! resolved via child.joints!"); // 'recovered' in prev step
+                        // this is allowed. a joint doesn't have to have a childB
+                        // todo: attempt fix: find child(s) that is connected to this jointscript, 1 child: childA, 2 childs: check childB || error
                     }
                     else
                     {
-                        // todo: attempt fix: find child(s) that is connected to this jointscript, 1 child: childA, 2 childs: check childB || error 
+                        Debug.LogWarning($"joint.childB had invalid information! resolved via child.joints!"); // 'recovered' in prev step
                     }
                 }
                 else
