@@ -109,5 +109,9 @@ namespace Assets.Scripts.Model.Game
             }
         }
 
+        public override int GetWeight(int volume)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

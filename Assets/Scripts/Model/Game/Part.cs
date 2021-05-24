@@ -30,7 +30,7 @@ namespace Assets.Scripts.Model.Game
         public Part(PartData partData, ModContext mod = null) : base(mod)
         {
             this.partData = partData;
-            this.partData.LoadRenderable(mod?.ModFolderPath); // load json file
+            this.partData.LoadRenderableData(mod?.ModFolderPath); // load json file
 
             //importer.SetConfig(new Assimp.Configs.MeshVertexLimitConfig(60000));
             //importer.SetConfig(new Assimp.Configs.MeshTriangleLimitConfig(60000));
@@ -200,7 +200,7 @@ namespace Assets.Scripts.Model.Game
                         string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : null;// : nonortga;
 
                         if (!File.Exists(dif)) dif = null; //transparanttga;
-                        if (!File.Exists(asg)) dif = null; //transparanttga;
+                        if (!File.Exists(asg)) asg = null; //transparanttga;
                         if (!File.Exists(nor)) nor = null; //nonortga;
 
                         TextureInfoList.Add(new TextureInfo()
@@ -222,7 +222,7 @@ namespace Assets.Scripts.Model.Game
                             string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : null;// : nonortga;
 
                             if (!File.Exists(dif)) dif = null; //transparanttga;
-                            if (!File.Exists(asg)) dif = null; //transparanttga;
+                            if (!File.Exists(asg)) asg = null; //transparanttga;
                             if (!File.Exists(nor)) nor = null; //nonortga;
 
                             TextureInfoList.Add(new TextureInfo()
@@ -271,5 +271,9 @@ namespace Assets.Scripts.Model.Game
             }
         }
 
+        public override int GetWeight(int volume)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

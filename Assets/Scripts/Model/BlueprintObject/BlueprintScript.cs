@@ -1,5 +1,4 @@
-﻿using Assets.Scripts.Model.Data;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -7,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+
+using Data = Assets.Scripts.Model.Data;
 
 namespace Assets.Scripts.Model.BlueprintObject
 {
@@ -26,8 +27,9 @@ namespace Assets.Scripts.Model.BlueprintObject
 
         }
 
-        public BlueprintData ToBlueprint()
+        public Data.BlueprintData ToBlueprint()
         {
+
             throw new NotImplementedException();
         }
 

@@ -32,7 +32,7 @@ namespace Assets.Scripts.Model.Data
         
         public Renderable Renderable { get; set; }
 
-        public void LoadRenderable(string modFolderPath)
+        public void LoadRenderableData(string modFolderPath)
         {
             if (RenderableObject is string renderablePath)
             {
