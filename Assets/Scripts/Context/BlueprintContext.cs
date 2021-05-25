@@ -68,8 +68,15 @@ namespace Assets.Scripts.Context
             }
             catch (Exception e)
             {
-                // todo: this can be resolved! create (inmemory) new description
-                throw new Exception($"Could not load {this.BlueprintFolderPath}/description.json", e);
+                Debug.LogWarning($"Could not load {this.BlueprintFolderPath}/description.json, using generated description.\nError: {e}");
+                Description = new DescriptionData()
+                {
+                    Description = "",
+                    LocalId = Guid.NewGuid().ToString(),
+                    Name = "Unknown blueprint",
+                    Type = "Blueprint",
+                    Version = 0
+                };
             }
         }
 
@@ -82,7 +89,7 @@ namespace Assets.Scripts.Context
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"Could not load icon, using plain texture.\nError: {e}");
+                Debug.LogWarning($"Could not load {this.BlueprintFolderPath}/icon.png, using plain texture.\nError: {e}");
             }
             finally
             {
@@ -90,13 +97,15 @@ namespace Assets.Scripts.Context
             }
         }
 
-        public void Refresh()
+        public void Refresh() // todo; refresh the BlueprintButton as well
         {
             var lastEditDateTime = Directory.GetLastWriteTime(this.BlueprintFolderPath);
             if (lastEditDateTime > this.LastEditDateTime)
             {
                 this.LoadIcon();
                 this.LoadDescription();
+                var blueprintbuttons = Resources.FindObjectsOfTypeAll<Model.Unity.BlueprintButton>();
+                blueprintbuttons.First(button => button.BlueprintContextReference == this).Initialize();
             }
             this.LastEditDateTime = lastEditDateTime;
         }

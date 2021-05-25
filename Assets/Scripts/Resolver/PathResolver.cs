@@ -71,6 +71,9 @@ public static class PathResolver
 
     public static string ResolvePath(string path, string parentPath = null)
     {
+        if (string.IsNullOrWhiteSpace(path))
+            return "";
+
         if (upgradeResolver != null) // have to resolve the path for the upgraderesolver , so it will be null the first time.
         {
             path = upgradeResolver.UpgradeResource(path);

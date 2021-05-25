@@ -20,7 +20,7 @@ public class UpgradeResolver
         }
     }
 
-    public string UpgradeResource(string path)
+    public string UpgradeResource(string path = "")
     {
         if (UpgradeResources.TryGetValue(path.ToLower().Replace(@"/", @"\"), out string upgrade))
         {

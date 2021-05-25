@@ -68,7 +68,8 @@ namespace Assets.Scripts.Model.Game
                     Uuid = child.ShapeId,
                     Dif = "$GAME_DATA/Textures/error.tga",
                     Color = "df7000",
-                    Density = 250
+                    Density = 250,
+                    Tiling = 1
                 };
                 return new Block(blockData);
             }
