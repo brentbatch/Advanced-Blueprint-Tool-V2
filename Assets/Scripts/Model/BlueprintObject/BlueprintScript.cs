@@ -44,7 +44,7 @@ namespace Assets.Scripts.Model.BlueprintObject
 
         public Vector3 CalculateCenter()
         {
-            var positions = Bodies.SelectMany(body => body.Childs).Select(child => child.gameObject.transform.position);
+            var positions = Bodies.SelectMany(body => body.Childs).Select(child => child.gameObject.transform.position + child.RotatedBounds/2); // todo; fix this, child center position is incorrect
             var center = positions.Aggregate((Vector3 vec1, Vector3 vec2) => vec1 + vec2) / positions.Count();
             return (Vector3)(this.center = center);
         }

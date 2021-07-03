@@ -24,9 +24,9 @@ namespace Assets.Scripts.Model.Game
 
         public override GameObject Instantiate(Transform parent)
         {
-            var gameObject = UnityEngine.Object.Instantiate(Constants.Instance.Block, parent);
+            var gameObject = UnityEngine.Object.Instantiate(GameController.Instance.Block, parent);
 
-            GameObject subMeshGameObject = UnityEngine.Object.Instantiate(Constants.Instance.Cube, gameObject.transform);
+            GameObject subMeshGameObject = UnityEngine.Object.Instantiate(GameController.Instance.Cube, gameObject.transform);
 
             var pos = subMeshGameObject.transform.position;
             (pos.x, pos.y, pos.z) = (0.5f, 0.5f, 0.5f);
@@ -34,7 +34,7 @@ namespace Assets.Scripts.Model.Game
 
             if (blockData.Glass == true)
             {
-                subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassBlockMaterial);
+                subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(GameController.Instance.glassBlockMaterial);
                 subMeshGameObject.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 subMeshGameObject.GetComponent<Renderer>().receiveShadows = false;
             }

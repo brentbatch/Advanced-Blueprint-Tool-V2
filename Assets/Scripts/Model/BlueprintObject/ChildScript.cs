@@ -138,7 +138,9 @@ namespace Assets.Scripts.Model.BlueprintObject
         /// </summary>
         protected void CalculateRotatedBounds()
         {
-            //throw new NotImplementedException();
+            var collider = GetComponent<BoxCollider>();
+            var rotatedBounds = gameObject.transform.TransformVector(collider.size);
+            this.RotatedBounds = Vector3Int.RoundToInt(rotatedBounds);
         }
 
         public void Rotate()

@@ -27,9 +27,6 @@ namespace Assets.Scripts.Model.Data
         [JsonProperty("type")]
         public string Type { get; set; }
 
-        [JsonProperty("version")]
-        public int Version { get; set; }
-
         public override string ToString()
         {
             return $"{Name}; {LocalId}; {FileId}";

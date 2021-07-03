@@ -134,14 +134,14 @@ namespace Assets.Scripts.Loaders
                 BlueprintData blueprintData = SelectedBlueprintButton.BlueprintContextReference.LoadBlueprint();
 
 
-                rootGameObject = Instantiate(Constants.Instance.Blueprint);
+                rootGameObject = Instantiate(GameController.Instance.Blueprint);
                 BlueprintScript blueprintScript = rootGameObject.GetComponent<BlueprintScript>();
 
                 int shapeIdx = 0;
 
                 foreach (var body in blueprintData.Bodies)
                 {
-                    GameObject bodyGameObject = Instantiate(Constants.Instance.Body, rootGameObject.transform);
+                    GameObject bodyGameObject = Instantiate(GameController.Instance.Body, rootGameObject.transform);
                     BodyScript bodyScript = bodyGameObject.GetComponent<BodyScript>();
 
                     blueprintScript.Bodies.Add(bodyScript);
@@ -166,15 +166,21 @@ namespace Assets.Scripts.Loaders
                 ArrangeJointReferencesUsingData(blueprintScript, blueprintData);
 
                 #region handle camera position
-                var center = blueprintScript.CalculateCenter();
-                var destination = center - Camera.transform.forward * 15;
-                var cameraState = Camera.GetComponent<UnityTemplateProjects.SimpleCameraController>().m_TargetCameraState;
+                PlayerController playerController = Camera.GetComponent<PlayerController>();
+                if (playerController.snapToCreation)
+                {
+                    var center = blueprintScript.CalculateCenter();
+                    var destination = center - Camera.transform.forward * playerController.distanceToSnap;
 
-                cameraState.x = destination.x;
-                cameraState.y = destination.y;
-                cameraState.z = destination.z;
+                    var cameraState = playerController.m_TargetCameraState;
+
+                    cameraState.x = destination.x;
+                    cameraState.y = destination.y;
+                    cameraState.z = destination.z;
+                    //GameObject.Find("Sphere").transform.position = center;
+                }
                 #endregion
-                
+
                 BlueprintLoader.blueprintObject = blueprintScript;
                 Debug.Log("successfully loaded bp");
             }
@@ -233,16 +239,17 @@ namespace Assets.Scripts.Loaders
             childScript.Controller = child.Controller;
             childScript.SetColor(child.Color);
 
-            if (!Constants.Instance.potatoMode)
+            if (!GameController.Instance.potatoMode)
                 shape.ApplyTextures(GameObject);
-
-            childScript.SetBlueprintPosition(child.Pos);
-            childScript.SetBlueprintRotation(child.Xaxis, child.Zaxis);
 
             if (shape is Block && child.Bounds != null)
             {
                 childScript.SetBlueprintBounds(child.Bounds);
             }
+
+            childScript.SetBlueprintPosition(child.Pos);
+            childScript.SetBlueprintRotation(child.Xaxis, child.Zaxis);
+
 
             return childScript;
         }
@@ -261,7 +268,7 @@ namespace Assets.Scripts.Loaders
 
             jointScript.SetColor(joint.Color);
 
-            if (!Constants.Instance.potatoMode)
+            if (!GameController.Instance.potatoMode)
                 shape.ApplyTextures(gameObject);
 
             jointScript.SetBlueprintPosition(joint.PosA);

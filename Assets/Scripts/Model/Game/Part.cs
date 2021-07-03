@@ -41,7 +41,7 @@ namespace Assets.Scripts.Model.Game
 
         public override GameObject Instantiate(Transform parent)
         {
-            var gameObject = UnityEngine.Object.Instantiate(Constants.Instance.Part, parent);
+            var gameObject = UnityEngine.Object.Instantiate(GameController.Instance.Part, parent);
 
             if (this.subMeshes == null)
                 LoadMesh();
@@ -56,14 +56,14 @@ namespace Assets.Scripts.Model.Game
             for (int i = 0; i < subMeshes.Length; i++)
             {
                 var subMesh = subMeshes[i];
-                GameObject subMeshGameObject = UnityEngine.Object.Instantiate(Constants.Instance.SubMesh, gameObject.transform);
+                GameObject subMeshGameObject = UnityEngine.Object.Instantiate(GameController.Instance.SubMesh, gameObject.transform);
                 subMeshGameObject.GetComponent<MeshFilter>().mesh = subMesh;
 
                 subMeshGameObject.transform.position = this.bounds / 2;
 
                 if ( materials[i % materials.Length].ToLower().Contains("glass"))
                 {
-                    subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassPartMaterial);
+                    subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(GameController.Instance.glassPartMaterial);
                     subMeshGameObject.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                     subMeshGameObject.GetComponent<Renderer>().receiveShadows = false;
                 }

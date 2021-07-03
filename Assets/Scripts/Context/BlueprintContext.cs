@@ -60,6 +60,25 @@ namespace Assets.Scripts.Context
             }
         }
 
+        /// <summary>
+        /// blueprint.json size in bytes.
+        /// </summary>
+        /// <returns></returns>
+        public long GetBlueprintSize()
+        {
+            try
+            {
+                return new System.IO.FileInfo($"{this.BlueprintFolderPath}/blueprint.json").Length;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// description.json
+        /// </summary>
         public void LoadDescription()
         {
             try
@@ -74,8 +93,7 @@ namespace Assets.Scripts.Context
                     Description = "",
                     LocalId = Guid.NewGuid().ToString(),
                     Name = "Unknown blueprint",
-                    Type = "Blueprint",
-                    Version = 0
+                    Type = "Blueprint"
                 };
             }
         }

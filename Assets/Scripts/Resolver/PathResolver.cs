@@ -65,7 +65,7 @@ public static class PathResolver
     {
         FindAppdataPath();
         FindPaths();
-        string upgradeFilePath = ResolvePath(Constants.Instance.upgradeResourcesPath);
+        string upgradeFilePath = ResolvePath(GameController.Instance.upgradeResourcesPath);
         upgradeResolver = new UpgradeResolver(upgradeFilePath);
     }
 
@@ -248,7 +248,7 @@ public static class PathResolver
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"Workshop folder description.json issue: {e}");
+                    Debug.LogError($"Could not load {description}\nError: {e}");
                 }
             }
         }
