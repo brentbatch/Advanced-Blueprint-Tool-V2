@@ -12,7 +12,6 @@ using UnityEngine.EventSystems;
 public class PlayerController : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] public AbstractTool selectedTool;
     [SerializeField] private GameObject projectile;
 
     #region camera variables
@@ -63,8 +62,6 @@ public class PlayerController : MonoBehaviour
     private Vector3 gravityVelocity;
 
 
-    public static bool isCursorVisible => GameController.IsCursorVisible;
-
     private void OnEnable()
     {
         m_TargetCameraState.SetFromTransform(transform);
@@ -102,28 +99,9 @@ public class PlayerController : MonoBehaviour
                 OnCrouch();
             }
         };
-        inputActions.Game.Camera.performed += ctx =>
-        {
-            if (ctx.ReadValueAsButton())
-            {
-                GameController.OnCursorToggle();
-            }
-        };
 
         //inputActions.Game.DoubleJump.performed += ctx => OnDoubleJump();
-        //inputActions.Game.LeftClick.performed += ctx => OnLeftClick();
-
-        //inputs for the tool:
-        inputActions.Game.LeftClick.performed += ctx => { if (!isCursorVisible) this.selectedTool?.OnLeftClick(ctx.ReadValueAsButton()); };
-        inputActions.Game.RightClick.performed += ctx => { if (!isCursorVisible) this.selectedTool?.OnRightClick(ctx.ReadValueAsButton()); };
-        inputActions.Game.Interact.performed += ctx => { if (!isCursorVisible) this.selectedTool?.OnInteract(ctx.ReadValueAsButton()); };
-        inputActions.Game.NextRotation.performed += ctx => { if (!isCursorVisible) this.selectedTool?.OnNextRotation(ctx.ReadValueAsButton()); };
-        inputActions.Game.PreviousRotation.performed += ctx => { if (!isCursorVisible) this.selectedTool?.OnPreviousRotation(ctx.ReadValueAsButton()); };
-        inputActions.Game.R.performed += ctx => { if (!isCursorVisible) this.selectedTool?.OnR(ctx.ReadValueAsButton()); };
-        inputActions.Game.F.performed += ctx => { if (!isCursorVisible) this.selectedTool?.OnF(ctx.ReadValueAsButton()); };
-        inputActions.Game.Tab.performed += ctx => { if (!isCursorVisible) this.selectedTool?.OnTab(ctx.ReadValueAsButton()); };
-        inputActions.Game.Help.performed += ctx => { if (!isCursorVisible) this.selectedTool?.OnToolInfo(ctx.ReadValueAsButton()); };
-
+        //inputActions.Game.LeftClick.performed += ctx => FireProjectile();
     }
 
 
@@ -131,6 +109,8 @@ public class PlayerController : MonoBehaviour
     public void OpenColorPicker()
     {
         ColorPicker.Create(this.color, "colortool", OnColorChanged, OnColorSelected);
+        MessageController messageController = GameController.Instance.messageController;
+        messageController.WarningMessage("Colorpicker not yet implemented.");
     }
 
     private void OnColorSelected(Color c)
@@ -146,7 +126,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (!isCursorVisible)
+        if (!GameController.IsCursorVisible)
         {
             Move(inputMovement);
             Look(inputView);
@@ -208,9 +188,9 @@ public class PlayerController : MonoBehaviour
     #endregion
 
 
-    private void OnLeftClick()
+    private void FireProjectile()
     {
-        if (isCursorVisible)
+        if (GameController.IsCursorVisible)
             return;
 
         GameObject newProjectile = Instantiate(projectile, transform.position + transform.forward * 0.5f, Quaternion.identity);

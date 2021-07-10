@@ -12,126 +12,77 @@ namespace Assets.Scripts.Util
     [Serializable]
     public struct SelectionFilter // struct because i want a copy when i pass it to the OperationInvoker (for undo purposes)
     {
-        private static readonly PlayerController PlayerController = GameController.Instance.playerController;
-
         private int layerMask;
-
-        public bool IsSelecting { get; private set; }
-        public bool IsMultiSelection { get; private set; }
-
-        public Vector3Int startSelection;
-        public Vector3Int endSelection;
+        private List<GameObject> selectedObjects;
         private GameObject selectedObject;
         private Bounds selectedObjectBounds;
-        private List<GameObject> selectedObjects;
+
+        public Vector3Int min;
+        public Vector3Int max;
+        public bool IsMultiSelection { get; private set; }
 
 
-        public static SelectionFilter StartSelection(int layerMask = ~(1 << 8) /* gizmo */)
+        public static SelectionFilter NewSelection(RaycastHit raycastHit, int layerMask = ~(1 << 8))
         {
-            var playerTransform = PlayerController.gameObject.transform;
-            return StartSelection(playerTransform.position, playerTransform.forward, layerMask);
-        }
-        public void ContinueSelection()
-        {
-            var playerTransform = PlayerController.gameObject.transform;
-            ContinueSelection(playerTransform.position, playerTransform.forward);
-        }
-        public void EndSelection()
-        {
-            var playerTransform = PlayerController.gameObject.transform;
-            EndSelection(playerTransform.position, playerTransform.forward);
-        }
-
-
-        public static SelectionFilter StartSelection(Vector3 origin, Vector3 direction, int layerMask = ~(1 << 8) /* gizmo */)
-        {
-            var selectionFilter = new SelectionFilter
+            var selection = new SelectionFilter 
             {
-                IsSelecting = true,
-                IsMultiSelection = false,
                 layerMask = layerMask
             };
-
-            if (Physics.Raycast(origin, direction, out RaycastHit hit, 500, layerMask))
-            {
-                selectionFilter.selectedObject = hit.transform.gameObject;
-                selectionFilter.selectedObjectBounds = hit.collider.bounds;
-                selectionFilter.startSelection = Vector3Int.RoundToInt(hit.point);
-                selectionFilter.endSelection = Vector3Int.RoundToInt(hit.point);
-            }
-            else
-            {
-                selectionFilter.startSelection = Vector3Int.zero;
-                selectionFilter.endSelection = Vector3Int.zero;
-            }
-            return selectionFilter;
+            selection.DoSelection(raycastHit);
+            return selection;
         }
-
-        public void ContinueSelection(Vector3 origin, Vector3 direction)
+        public void DoSelection(RaycastHit raycastHit)
         {
-            if (!IsSelecting) return;
-
-            if (IsMultiSelection)
+            if (raycastHit.Equals(default(RaycastHit)))
+                return;
+            if (selectedObject == null)
             {
-                // multiselection
-                if (Physics.Raycast(origin, direction, out RaycastHit hit, 500, layerMask))
-                {
-                    endSelection = Vector3Int.RoundToInt(hit.point);
-                }
+                // new 
+                selectedObject = raycastHit.transform.gameObject;
+                selectedObjectBounds = raycastHit.collider.bounds;
+                min = Vector3Int.RoundToInt(selectedObjectBounds.min);
+                max = Vector3Int.RoundToInt(selectedObjectBounds.max);
             }
-            else if (Physics.Raycast(origin, direction, out RaycastHit hit, 500, layerMask))
+            else if (raycastHit.transform.gameObject != selectedObject) // make 'shift' use rayhit.point
             {
-                if (selectedObject == null) // initial startSelection failed
-                {
-                    selectedObject = hit.transform.gameObject;
-                    selectedObjectBounds = hit.collider.bounds;
-                    startSelection = Vector3Int.RoundToInt(hit.point);
-                    endSelection = Vector3Int.RoundToInt(hit.point);
-                }
-                else if (selectedObject != hit.transform.gameObject) // start multiselection
-                {
-                    IsMultiSelection = true;
-                }
-            }
-        }
-
-        public void EndSelection(Vector3 origin, Vector3 direction)
-        {
-            if (!IsSelecting) return;
-            ContinueSelection(origin, direction);
-
-            if (!IsMultiSelection)
-            {
-                if (selectedObjectBounds != null) // single selection & something was selected
-                {
-                    startSelection = Vector3Int.RoundToInt(selectedObjectBounds.min);
-                    endSelection = Vector3Int.RoundToInt(selectedObjectBounds.max);
-                }
+                // extend
+                IsMultiSelection = true;
+                var min1 = selectedObjectBounds.min;
+                var max1 = selectedObjectBounds.max;
+                var otherMin = raycastHit.collider.bounds.min;
+                var otherMax = raycastHit.collider.bounds.max;
+                Vector3Int newMin = default, newMax = default;
+                newMin.x = Mathf.RoundToInt(Mathf.Min(min1.x, max1.x, otherMin.x, otherMax.x));
+                newMin.y = Mathf.RoundToInt(Mathf.Min(min1.y, max1.y, otherMin.y, otherMax.y));
+                newMin.z = Mathf.RoundToInt(Mathf.Min(min1.z, max1.z, otherMin.z, otherMax.z));
+                newMax.x = Mathf.RoundToInt(Mathf.Max(min1.x, max1.x, otherMin.x, otherMax.x));
+                newMax.y = Mathf.RoundToInt(Mathf.Max(min1.y, max1.y, otherMin.y, otherMax.y));
+                newMax.z = Mathf.RoundToInt(Mathf.Max(min1.z, max1.z, otherMin.z, otherMax.z));
+                if (newMin.Equals(min))
+                    max = newMax;
                 else
-                {
-                    startSelection = Vector3Int.zero;
-                    endSelection = Vector3Int.zero;
-                }
+                    min = newMin;
             }
-
-            IsSelecting = false;
         }
 
-        public static SelectionFilter FromSelection(Vector3Int startSelection, Vector3Int endSelection)
+
+
+        public static SelectionFilter FromSelection(Vector3Int min, Vector3Int max, int layerMask = ~(1 << 8))
         {
             var selection = new SelectionFilter
             {
-                startSelection = startSelection,
-                endSelection = endSelection,
-                IsMultiSelection = true
+                min = min,
+                max = max,
+                IsMultiSelection = true,
+                layerMask = layerMask
             };
             return selection;
         }
-        public static SelectionFilter FromGameObjects(List<GameObject> gameObjects, Vector3Int startSelection, Vector3Int endSelection) =>
+        public static SelectionFilter FromGameObjects(List<GameObject> gameObjects, Vector3Int min, Vector3Int max) =>
             new SelectionFilter
             {
-                startSelection = startSelection,
-                endSelection = endSelection,
+                min = min,
+                max = max,
                 selectedObjects = gameObjects,
                 IsMultiSelection = true
             };
@@ -140,10 +91,10 @@ namespace Assets.Scripts.Util
             var selectedObjectBounds = gameObject.GetComponent<BoxCollider>().bounds;
             var selection = new SelectionFilter
             {
+                min = Vector3Int.RoundToInt(selectedObjectBounds.min),
+                max = Vector3Int.RoundToInt(selectedObjectBounds.max),
                 selectedObject = gameObject,
                 selectedObjectBounds = selectedObjectBounds,
-                startSelection = Vector3Int.RoundToInt(selectedObjectBounds.min),
-                endSelection = Vector3Int.RoundToInt(selectedObjectBounds.max),
             };
             return selection;
         }
@@ -153,36 +104,16 @@ namespace Assets.Scripts.Util
         {
             if (!IsMultiSelection && selectedObjectBounds != null)
                 return selectedObjectBounds.center;
-            var center = ((Vector3)(startSelection + endSelection)) / 2;
-            if (IsMultiSelection && selectedObjectBounds != null)
-            {
-                Vector3Int size = (startSelection - endSelection);
-                if (size.x == 0) center.x += (center.x == selectedObjectBounds.min.x) ? 0.5f : -0.5f;
-                if (size.y == 0) center.y += (center.y == selectedObjectBounds.min.y) ? 0.5f : -0.5f;
-                if (size.z == 0) center.z += (center.z == selectedObjectBounds.min.z) ? 0.5f : -0.5f;
-            }
-            return center;
+            return ((Vector3)(max + min)) / 2;
         }
 
         public Vector3Int GetSize()
         {
             if (!IsMultiSelection && selectedObjectBounds != null)
                 return Vector3Int.RoundToInt(selectedObjectBounds.size);
-            Vector3Int size = (startSelection - endSelection);
-            if (size.x < 0) size.x = -size.x;
-            if (size.y < 0) size.y = -size.y;
-            if (size.z < 0) size.z = -size.z;
-            if (IsMultiSelection && selectedObjectBounds != null)
-            {
-                if (size.x == 0) size.x = 1;
-                if (size.y == 0) size.y = 1;
-                if (size.z == 0) size.z = 1;
-            }
-            return size;
+            return (max - min);
         }
 
-        public Vector3Int min => Vector3Int.RoundToInt(GetCenter() - ((Vector3)GetSize()) / 2);
-        public Vector3Int max => Vector3Int.RoundToInt(GetCenter() + ((Vector3)GetSize()) / 2);
 
         public List<GameObject> GetSelectedGameObjects()
         {
@@ -193,7 +124,7 @@ namespace Assets.Scripts.Util
 
         private void CalculateSelectedGameObjectsFromSelection()
         {
-            selectedObjects = Physics.OverlapBox(GetCenter(), GetSize() / 2, Quaternion.identity, layerMask)
+            selectedObjects = Physics.OverlapBox(GetCenter(), (Vector3)GetSize() * 0.4999f, Quaternion.identity, layerMask)
                 .Select(collider => collider.gameObject)
                 .ToList();
         }

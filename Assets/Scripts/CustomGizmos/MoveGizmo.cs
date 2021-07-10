@@ -86,14 +86,14 @@ namespace Assets.Scripts.CustomGizmos
                 Debug.LogWarning("'MoveGizmo.Move' available AFTER doing SetActive!");
                 return false;
             }
-            IsMoving = keyDown;
+            IsMoving = keyDown && selectedGizmoGameObject != null;
             return selectedGizmoGameObject != null; // has something selected , it will move something
         }
 
         private bool ClosestMoveGizmoInSight(out RaycastHit raycastHit)
         {
             Transform playerTransform = PlayerController.gameObject.transform;
-            RaycastHit[] raycastHits = Physics.RaycastAll(playerTransform.position, playerTransform.forward, 100f, 1 << 8 /*Gizmo*/ );
+            RaycastHit[] raycastHits = Physics.RaycastAll(playerTransform.position, playerTransform.forward, 200f, 1 << LayerMask.NameToLayer("Gizmo")); 
             raycastHit = raycastHits.Where(hit => hit.transform.CompareTag("MoveGizmo"))
                                             .OrderBy(hit => (hit.point - playerTransform.position).magnitude)
                                             .FirstOrDefault();
@@ -150,6 +150,13 @@ namespace Assets.Scripts.CustomGizmos
                     }
                 }
             }
+        }
+
+        private void Update()
+        {
+            Transform playerTransform = PlayerController.gameObject.transform;
+            float scale = Mathf.Max(0.3f, Mathf.Sqrt((playerTransform.position - transform.position).magnitude) / 3f - 0.5f);
+            transform.localScale = Vector3.one * scale;
         }
 
         private void SetHighlight(GameObject hightlightObject, bool enable)

@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using UnityEditor.ShortcutManagement;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -18,16 +19,18 @@ namespace Assets.Scripts.Unity
         [Header("References")]
         public PlayerController playerController;
         public HotbarController hotbarController;
-        public ToolController ToolController;
+        public ToolController toolController;
+        public MessageController messageController;
 
         // unity player input system : https://github.com/Unity-Technologies/InputSystem/blob/develop/Packages/com.unity.inputsystem/InputSystem/Plugins/PlayerInput/PlayerInput.cs
         public PlayerInput playerInput;
-        public InputActions inputActions;
         public EscapeMenu escapeMenu;
 
         public TMP_Text hotbarTitleText;
         public TMP_Text hotbarDescriptionText;
 
+        [Header("Instances")]
+        public InputActions inputActions;
 
         [Header("Prefabs")]
         public GameObject Cube;
@@ -51,7 +54,7 @@ namespace Assets.Scripts.Unity
         public static bool IsCursorVisible { get; private set; }
 
 
-        // paths:
+        [Header("Paths")]
         public string upgradeResourcesPath = "$Game_data/upgrade_resources.json";
 
         public void Awake()
@@ -61,28 +64,37 @@ namespace Assets.Scripts.Unity
             else
                 throw new Exception("more than one GameController");
 
-            //escapeMenu = GameObject.Find("EscapeCanvas").GetComponent<EscapeMenu>();
-            //playerInput = GetComponent<PlayerInput>();
             inputActions = new InputActions();
             IsCursorVisible = true;
+#if UNITY_EDITOR
+            ShortcutManager.instance.activeProfileId = "playmode";
+#endif
+        }
+        private void OnApplicationQuit()
+        {
+#if UNITY_EDITOR
+            ShortcutManager.instance.activeProfileId = "Default";
+#endif
+
         }
 
         private void OnEnable()
         {
             playerInput.currentActionMap = inputActions.Game;
             
+            inputActions.Game.Camera.performed += ctx => { if (ctx.ReadValueAsButton()) OnCursorToggle(); };
             inputActions.Game.Escape.performed += ctx => { 
-                if (playerController.selectedTool?.OnEsc(ctx.ReadValueAsButton()) != false
-                && ctx.ReadValueAsButton())
+                if (toolController.selectedTool?.OnEsc(ctx.ReadValueAsButton()) != false && ctx.ReadValueAsButton())
                 {
                     escapeMenu.Toggle();
                 }
             };
 
+
             Button focusBtn = GameObject.Find("PullFocusButton").GetComponent<Button>();
             focusBtn.onClick.AddListener(() =>
             {
-                if (playerController.selectedTool?.OnFocus() != false)
+                if (toolController.selectedTool?.OnFocus() != false)
                 {
                     SetCursorState(false);
                 }
@@ -112,6 +124,7 @@ namespace Assets.Scripts.Unity
             IsCursorVisible = cursorVisible;
             Cursor.lockState = IsCursorVisible ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = IsCursorVisible;
+            //Time.timeScale = cursorVisible ? 0 : 1;
             if (!cursorVisible)
             {
                 EventSystem.current.SetSelectedGameObject(null);

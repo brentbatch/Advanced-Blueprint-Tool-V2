@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Assets.Scripts.Unity;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,14 +10,13 @@ namespace Assets.Scripts.Tool
 {
     public class ToolController : MonoBehaviour
     {
+        [SerializeField] public AbstractTool selectedTool;
 
-        public static ToolController Instance { get; private set; }
 
         private List<AbstractTool> toolList;
         public List<AbstractTool> ToolList { get => toolList ?? (toolList = new List<AbstractTool>()
             {
                 new LiftTool(),
-                new MutatorTool(),
                 new MutatorTool(),
             });
         }
@@ -24,21 +24,33 @@ namespace Assets.Scripts.Tool
 
         private void Awake()
         {
-            if (Instance == null) // stupid singleton to make class variables available anywhere
-                Instance = this;
-            else
-                throw new Exception("more than one ToolController");
             
         }
 
         private void OnEnable()
         {
+
         }
 
         private void Start()
         {
+            InputActions inputActions = GameController.Instance.inputActions;
+
+            inputActions.Game.LeftClick.performed += ctx => selectedTool?.OnLeftClick(ctx.ReadValueAsButton());
+            inputActions.Game.RightClick.performed += ctx => selectedTool?.OnRightClick(ctx.ReadValueAsButton());
+            inputActions.Game.Interact.performed += ctx => selectedTool?.OnInteract(ctx.ReadValueAsButton());
+            inputActions.Game.NextRotation.performed += ctx => selectedTool?.OnNextRotation(ctx.ReadValueAsButton());
+            inputActions.Game.PreviousRotation.performed += ctx => selectedTool?.OnPreviousRotation(ctx.ReadValueAsButton());
+            inputActions.Game.R.performed += ctx => selectedTool?.OnR(ctx.ReadValueAsButton());
+            inputActions.Game.F.performed += ctx => selectedTool?.OnF(ctx.ReadValueAsButton());
+            inputActions.Game.Tab.performed += ctx => selectedTool?.OnTab(ctx.ReadValueAsButton());
+            inputActions.Game.Help.performed += ctx => selectedTool?.OnToolInfo(ctx.ReadValueAsButton());
+
+
 
         }
+
+
 
     }
 }

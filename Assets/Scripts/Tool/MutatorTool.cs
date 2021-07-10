@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.CustomGizmos;
 using Assets.Scripts.Model.BlueprintObject;
+using Assets.Scripts.Unity;
 using Assets.Scripts.Util;
 using System;
 using System.Collections.Generic;
@@ -41,71 +42,92 @@ namespace Assets.Scripts.Tool
             functions = new List<ToolFunction>()
             {
                 // todo: select shapes function, 'e' adds extra filters such as color, type etc, ctr+a selects all
-                new ToolFunction { title = "select shapes", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ),
-                    OnInteract = ToggleSelectionMenu, OnLeftClick = Selection, OnUnEquip = StopSelection, OnRightClick = DisableSelection},
+                //new ToolFunction { title = "select shapes", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ),
+                //    OnEquip = ShowSelection, OnInteract = ToggleSelectionMenu, OnLeftClick = Selection, OnUnEquip = StopSelection, OnRightClick = b => CancelSelection()},
                 new ToolFunction { title = "move shapes", description = "", sprite = Resources.Load<Sprite>( "Textures/move" ),
-                    OnEquip = ShowMove, OnInteract = ToggleMoveMenu, OnLeftClick = Move, OnUnEquip = DisableMove, OnRightClick = StopMove },
-                new ToolFunction { title = "rotate shapes", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ) },
-                new ToolFunction { title = "scale blocks", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ) },
+                    OnEquip = EquipMoveFunction, OnInteract = ToggleMoveMenu, OnLeftClick = SelectionMoveLMB, OnUnEquip = UnEquipMoveFunction, OnRightClick = SelectionMoveRMB },
+                new ToolFunction { title = "rotate shapes", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ),OnEquip = () => {
+                    MessageController messageController = GameController.Instance.messageController;
+                    messageController.WarningMessage("Feature not yet implemented.");
+                }},
+                new ToolFunction { title = "scale blocks", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ) ,OnEquip = () => {
+                    MessageController messageController = GameController.Instance.messageController;
+                    messageController.WarningMessage("Feature not yet implemented."); 
+                }},
             };
             selectedToolFunction = functions[0];
 
         }
+
 
         public override void OnStart()
         {
             selectionGizmo = SelectionGizmo.Instance;
             moveGizmo = MoveGizmo.Instance;
         }
+
+        public override void OnUnEquip()
+        {
+            moveGizmo.SetActive(false);
+            selectionGizmo.SetActive(false);
+            base.OnUnEquip();
+        }
+
         // // don't do anything on clicking the function in the hotbar:
         // public override void OnHotBarFunctionClick() {}
 
-        private void Selection(bool keyDown) => selectionGizmo.Selection(keyDown);
-        private void StopSelection() => selectionGizmo.StopSelection();
-        private void DisableSelection(bool keyDown) => selectionGizmo.DisableSelection();
-        private void ToggleSelectionMenu(bool keyDown)
+        private void EquipMoveFunction()
         {
-            // todo
+            selectionGizmo.SetActive(true, OnSelect);
+
         }
 
-
-        private void ShowMove()
+        private void SelectionMoveLMB(bool keyDown)
         {
-            // open & set movegizmo active
-            moveGizmo.SetActive(true, OnMove);
-            moveGizmo.SetPosition(selectionGizmo.selectionFilter.GetCenter());
+            if (selectionGizmo.IsSelecting || selectionGizmo.IsScaling || !moveGizmo.Move(keyDown))
+                selectionGizmo.Selection(keyDown);
         }
-        private void DisableMove()
+        private void SelectionMoveRMB(bool keyDown)
         {
-            // remove movegizmo
-            moveGizmo.SetActive(false);
-        }
-        private void Move(bool keyDown)
-        {
-            // start moving block (selection gizmo)
-            moveGizmo.Move(keyDown);
-        }
-        private void StopMove(bool keyDown) // RMB
-        {
-            // stop current move action in movegizmo
             moveGizmo.CancelMove();
+            if (!selectionGizmo.Selection(false))
+            {
+                selectionGizmo.CancelSelection();
+                moveGizmo.SetActive(false);
+            }
         }
-        private void ToggleMoveMenu(bool keyDown)
-        {
 
+        private void UnEquipMoveFunction()
+        {
+            moveGizmo.SetActive(false);
+            selectionGizmo.SetActive(false);
         }
+
+        private void OnSelect(SelectionFilter selectionFilter)
+        {
+            moveGizmo.SetActive(true, OnMove);
+            moveGizmo.SetPosition(selectionFilter.GetCenter());
+        }
+
         private void OnMove(Vector3Int offset)
         {
+            //todo
             List<GameObject> gameObjects = selectionGizmo.selectionFilter.GetSelectedGameObjects();
             selectionGizmo.selectionFilter = SelectionFilter.FromGameObjects(
                 gameObjects,
-                selectionGizmo.selectionFilter.startSelection + offset,
-                selectionGizmo.selectionFilter.endSelection + offset);
+                selectionGizmo.selectionFilter.min + offset,
+                selectionGizmo.selectionFilter.max + offset);
             foreach (GameObject gameObject in gameObjects)
             {
                 gameObject.transform.position += offset;
             }
         }
+        private void ToggleMoveMenu(bool keyDown)
+        {
+
+        }
+
+
 
     }
 }

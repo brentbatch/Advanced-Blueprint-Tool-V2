@@ -144,6 +144,7 @@ namespace Assets.Scripts.Context
                 NullValueHandling = NullValueHandling.Ignore
             });
 
+            System.IO.File.WriteAllText($"{this.BlueprintFolderPath}/blueprint.json", blueprintString); //save blueprint
 
             return true;
         }

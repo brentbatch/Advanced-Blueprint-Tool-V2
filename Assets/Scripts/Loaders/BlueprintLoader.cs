@@ -200,13 +200,32 @@ namespace Assets.Scripts.Loaders
         /// </summary>
         public void SaveBlueprint()
         {
+            MessageController messageController = GameController.Instance.messageController;
             if (BlueprintLoader.blueprintObject == null)
+            {
+                messageController.WarningMessage("Cannot save a creation that doesn't exist.\nLoad one first.",5);
                 return;
+            }
 
-            string blueprintDataStr = JsonConvert.SerializeObject(BlueprintLoader.blueprintObject.ToBlueprintData());
-
-
-
+            //string blueprintDataStr = JsonConvert.SerializeObject(BlueprintLoader.blueprintObject.ToBlueprintData());
+            messageController.YesNoMessage("Are you sure you want to save your creation to this blueprint?", 
+                yesAction: () =>
+                {
+                    try
+                    {
+                        SelectedBlueprintButton.BlueprintContextReference.Blueprint = BlueprintLoader.blueprintObject.ToBlueprintData();
+                        SelectedBlueprintButton.BlueprintContextReference.Save();
+                        messageController.WarningMessage("Creation successfully saved!");
+                    }
+                    catch
+                    {
+                        messageController.WarningMessage("Something went wrong while saving your creation to this blueprint!", 5);
+                    }
+                }, 
+                noAction: () =>
+                {
+                    messageController.WarningMessage("Creation not saved.",5);
+                });
         }
 
         /// <summary>
@@ -216,13 +235,13 @@ namespace Assets.Scripts.Loaders
         {
             try
             {
-                Debug.Log("trying to delete bp");
+                MessageController messageController = GameController.Instance.messageController;
+                messageController.WarningMessage("This functionality is not yet available.");
             }
             catch (Exception e)
             {
                 Debug.LogError(e);
             }
-            throw new NotImplementedException();
         }
 
 

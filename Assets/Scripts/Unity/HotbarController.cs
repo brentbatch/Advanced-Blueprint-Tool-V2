@@ -13,8 +13,7 @@ public class HotbarController : MonoBehaviour
 {
     [Header("References")]
     private Sprite transparentSprite;
-    private InputActions inputActions;
-    private PlayerController playerController;
+    private ToolController toolController;
     private List<AbstractTool> tools;
 
     [Header("Config")]
@@ -48,21 +47,22 @@ public class HotbarController : MonoBehaviour
     private void Awake()
     {
         IsToolBarSelected = true;
-        inputActions = new InputActions();
         transparentSprite = Resources.Load<Sprite>("Textures/transparent");
     }
 
     private void OnEnable()
     {
-        inputActions.Enable();
-        inputActions.Game.MouseScroll.performed += ctx => { if (!PlayerController.isCursorVisible) OnScroll(ctx); };
-        inputActions.Game.MiddleClick.performed += ctx => { if (!PlayerController.isCursorVisible) OnMiddleMouseClick(ctx); };
     }
 
     private void Start()
     {
-        playerController = GameController.Instance.playerController;
-        this.tools = ToolController.Instance.ToolList;
+        InputActions inputActions = GameController.Instance.inputActions;
+        inputActions.Enable();
+        inputActions.Game.MouseScroll.performed += ctx => OnScroll(ctx);
+        inputActions.Game.MiddleClick.performed += ctx => OnMiddleMouseClick(ctx);
+
+        toolController = GameController.Instance.toolController;
+        tools = toolController.ToolList;
 
         tools.ForEach(tool => tool.OnStart());
 
@@ -82,11 +82,14 @@ public class HotbarController : MonoBehaviour
                 IsToolBarSelected = true;
                 ShowToolBarHighlight();
                 indexToolHotbarButton = btnIndex;
-                int index = (btnIndex + offsetTool).mod(tools.Count);
+                //int index = (btnIndex + offsetTool).mod(tools.Count);
+                int index = (btnIndex + offsetTool);
+                if (index >= tools.Count)
+                    return;
                 AbstractTool tool = tools[index];
 
-                playerController.selectedTool?.OnUnEquip();
-                playerController.selectedTool = tool;
+                toolController.selectedTool?.OnUnEquip();
+                toolController.selectedTool = tool;
                 tool.OnEquip();
 
                 FillFunctionIcons();
@@ -109,13 +112,13 @@ public class HotbarController : MonoBehaviour
                 ShowToolBarHighlight();
                 indexFunctionHotbarButton = btnIndex;
                 int index = (btnIndex + offsetFunction);
-                playerController.selectedTool.SelectToolFunction(index);
+                toolController.selectedTool.SelectToolFunction(index);
             };
             // btnclick from UI:
             hotbarButton.onClick += () => {
                 IsToolBarSelected = false;
                 ShowToolBarHighlight();
-                playerController.selectedTool.OnHotBarFunctionClick();
+                toolController.selectedTool.OnHotBarFunctionClick();
             };
 
         }
@@ -131,8 +134,8 @@ public class HotbarController : MonoBehaviour
     }
 
 #pragma warning disable UNT0008 // Null propagation on Unity objects
-    private void Update() => playerController?.selectedTool?.OnUpdate();
-    private void FixedUpdate() => playerController?.selectedTool?.OnFixedUpdate();
+    private void Update() => toolController.selectedTool?.OnUpdate();
+    private void FixedUpdate() => toolController.selectedTool?.OnFixedUpdate();
 #pragma warning restore UNT0008 // Null propagation on Unity objects
 
     private void FillToolIcons()
@@ -141,15 +144,15 @@ public class HotbarController : MonoBehaviour
         for (int i = 0; i < toolHotbarButtons.Count; i++)
         {
             var btn = toolHotbarButtons[i];
-            int offsetindex = (i + offsetTool).mod(tools.Count);
-            btn.image.sprite = tools[offsetindex].sprite;
+            int offsetindex = (i + offsetTool);//.mod(tools.Count);
+            btn.image.sprite = 0 <= offsetindex && offsetindex < tools.Count ? tools[offsetindex].sprite : transparentSprite;
         }
     }
 
     private void FillFunctionIcons()
     {
         // todo: mind the 'offset'
-        List<ToolFunction> toolFunctions = playerController.selectedTool.functions;
+        List<ToolFunction> toolFunctions = toolController.selectedTool.functions;
         for (int i = 0; i< functionHotbarButtons.Count; i++)
         {
             var btn = functionHotbarButtons[i];
@@ -163,7 +166,7 @@ public class HotbarController : MonoBehaviour
         if (ctx.ReadValueAsButton())
         {
             IsToolBarSelected = !IsToolBarSelected;
-            playerController.selectedTool?.ShowToolInfo();
+            toolController.selectedTool?.ShowToolInfo();
             ShowToolBarHighlight();
             //StartCoroutine(ResetColor(img));
         }
@@ -224,10 +227,10 @@ public class HotbarController : MonoBehaviour
     {
         if (indexFunctionHotbarButton + 1 >= 9)
         {
-            int functionAmount = playerController.selectedTool.functions.Count;
+            int functionAmount = toolController.selectedTool.functions.Count;
             //if (functionAmount > 9)
             //    offsetFunction = (offsetFunction + 1).mod(functionAmount); // loops around
-            if (offsetFunction + indexFunctionHotbarButton + 1 < playerController.selectedTool.functions.Count) // stops at max
+            if (offsetFunction + indexFunctionHotbarButton + 1 < toolController.selectedTool.functions.Count) // stops at max
                 offsetFunction++;
         }
         else
@@ -243,7 +246,7 @@ public class HotbarController : MonoBehaviour
     {
         if (indexFunctionHotbarButton - 1 < 0)
         {
-            int functionAmount = playerController.selectedTool.functions.Count;
+            int functionAmount = toolController.selectedTool.functions.Count;
             //if (functionAmount > 9)
             //    offsetFunction = (offsetFunction - 1).mod(functionAmount); // loops around
             if (offsetFunction - 1 >= 0) // stops at max
@@ -262,7 +265,7 @@ public class HotbarController : MonoBehaviour
     {
         if(indexToolHotbarButton + 1 >= 9)
         {
-            offsetTool = (offsetTool + 1).mod(tools.Count); // loops around
+            //offsetTool = (offsetTool + 1).mod(tools.Count); // loops around
             //if (offsetTool + 1 < tools.Count) // stops at max
             //    offsetTool++;
         }
@@ -279,7 +282,7 @@ public class HotbarController : MonoBehaviour
     {
         if (indexToolHotbarButton - 1 < 0)
         {
-            offsetTool = (offsetTool - 1).mod(tools.Count);
+            //offsetTool = (offsetTool - 1).mod(tools.Count);
         }
         else
         {

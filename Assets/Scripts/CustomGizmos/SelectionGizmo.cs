@@ -24,10 +24,16 @@ namespace Assets.Scripts.CustomGizmos
         [SerializeField] private MeshRenderer ZFace;
         [SerializeField] private MeshRenderer ZNegFace;
 
-        private bool isScaling;
+        private LayerMask gizmoLayerMask;
+        private Action<SelectionFilter> OnSelect;
+        public SelectionFilter selectionFilter;
+
+        public bool IsSelecting { get; private set; }
+        public bool IsScaling { get; private set; }
+
         private Vector3Int scaleDirection;
         private MeshRenderer selectedFace;
-        public SelectionFilter selectionFilter;
+
 
         private void Awake()
         {
@@ -35,76 +41,90 @@ namespace Assets.Scripts.CustomGizmos
                 Instance = this;
             else
                 throw new Exception("more than one SelectionGizmo");
+
+            gizmoLayerMask = 1 << LayerMask.NameToLayer("Gizmo");
         }
 
         private void Start()
         {
             PlayerController = GameController.Instance.playerController;
-            DisableMeshRenderers();
-        }
-
-        public void Selection(bool keyDown)
-        {
-            gameObject.SetActive(true);
-            Cube.enabled = true;
-
-            var playerTransform = PlayerController.gameObject.transform;
-            if (keyDown && Physics.Raycast(playerTransform.position, playerTransform.forward, out RaycastHit hit, 500, 1 << LayerMask.NameToLayer("Gizmo")))
-            {
-                MeshRenderer hitMeshRenderer = hit.collider.GetComponent<MeshRenderer>();
-                if (new List<MeshRenderer> { XFace, XNegFace, YFace, YNegFace, ZFace, ZNegFace }.Contains(hitMeshRenderer))
-                {
-                    isScaling = true;
-                    scaleDirection = Vector3Int.RoundToInt(hit.normal);
-                    selectedFace = hitMeshRenderer;
-                }
-                return;
-            }
-            if (isScaling && !keyDown)
-            {
-                isScaling = false;
-                return;
-            }
-
-            isScaling = false;
-            if (keyDown)
-                selectionFilter = SelectionFilter.StartSelection();
-            else
-                selectionFilter.EndSelection();
-        }
-
-        public void StopSelection()
-        {
-            // if selection?.isselecting, endselection
-            // if scaling, end scaling
-            isScaling = false;
-            if (selectionFilter.IsSelecting)
-            {
-                selectionFilter.EndSelection();
-            }
-        }
-
-        public void DisableSelection()
-        {
-            DisableMeshRenderers();
-            selectionFilter = new SelectionFilter();
-            gameObject.transform.position = Vector3.zero;
-            gameObject.transform.localScale = Vector3.zero;
-            gameObject.SetActive(false);
-        }
-
-        private void DisableMeshRenderers()
-        {
             foreach (var renderer in new List<MeshRenderer> { Cube, XFace, XNegFace, YFace, YNegFace, ZFace, ZNegFace })
             {
                 renderer.enabled = false;
             }
+            SetActive(false);
+        }
+
+        public void SetSelection(SelectionFilter selectionFilter) => this.selectionFilter = selectionFilter;
+
+        public void SetActive(bool active, Action<SelectionFilter> onSelect = null)
+        {
+            gameObject.SetActive(active);
+            Cube.enabled = active;
+
+            if (active)
+            {
+                OnSelect = onSelect ?? (vec => { });
+                if (OnSelect == null) Debug.LogWarning("SelectionGizmo.SetActive 'OnSelect' parameter is null!");
+            }
+            else
+            {
+                CancelSelection();
+            }
+        }
+
+        public void CancelSelection()
+        {
+            IsScaling = false;
+            IsSelecting = false;
+            selectionFilter = new SelectionFilter();
+            gameObject.transform.position = Vector3.zero;
+            gameObject.transform.localScale = Vector3.zero;
+        }
+
+        public bool Selection(bool keyDown)
+        {
+            if (!gameObject.activeInHierarchy)
+            {
+                Debug.LogWarning("'SelectionGizmo.Selection' available AFTER doing SetActive!");
+                return false;
+            }
+
+            var playerTransform = PlayerController.gameObject.transform;
+            if (keyDown && Physics.Raycast(playerTransform.position, playerTransform.forward, out RaycastHit hit, 500, gizmoLayerMask))
+            {
+                MeshRenderer hitMeshRenderer = hit.collider.GetComponent<MeshRenderer>();
+                if (new List<MeshRenderer> { XFace, XNegFace, YFace, YNegFace, ZFace, ZNegFace }.Contains(hitMeshRenderer))
+                {
+                    IsScaling = true;
+                    scaleDirection = Vector3Int.RoundToInt(hit.normal);
+                    selectedFace = hitMeshRenderer;
+                    return true;
+                }
+                return false; // i hit something on the gizmo layer but it's not any of what i need, something else needs to handle it
+            }
+            if (!keyDown && (IsScaling || IsSelecting))
+            {
+                IsScaling = false;
+                IsSelecting = false;
+                OnSelect(selectionFilter);
+                return true;
+            }
+            IsScaling = false;
+
+            if (keyDown && Physics.Raycast(playerTransform.position, playerTransform.forward, out RaycastHit raycastHit, 500, ~gizmoLayerMask))
+            {
+                IsSelecting = true;
+                selectionFilter = SelectionFilter.NewSelection(raycastHit);
+                return true;
+            }
+            return false;
         }
 
 
         private void FixedUpdate()
         {
-            if (isScaling)
+            if (IsScaling)
             {
                 var playerTransform = PlayerController.gameObject.transform;
                 var center = selectionFilter.GetCenter();
@@ -125,20 +145,28 @@ namespace Assets.Scripts.CustomGizmos
                             min += scaleDirection * Mathf.RoundToInt(desiredLength - currentLength);
                         else
                             max += scaleDirection * Mathf.RoundToInt(desiredLength - currentLength);
-                        selectionFilter = SelectionFilter.FromSelection(min, max);
+                        selectionFilter = SelectionFilter.FromSelection(min, max, ~gizmoLayerMask);
+                        OnSelect(selectionFilter);
                     }
                 }
             }
-            if (selectionFilter.IsSelecting)
+            if (IsSelecting)
             {
-                selectionFilter.ContinueSelection();
+                var playerTransform = PlayerController.gameObject.transform;
+                if (Physics.Raycast(playerTransform.position, playerTransform.forward, out RaycastHit hit, 500, ~gizmoLayerMask))
+                {
+                    selectionFilter.DoSelection(hit);
+                }
             }
+        }
 
+        private void Update()
+        {
             Cube.material.color = new Color(0.8f, 0.5f, 0f, 0.15f * (Mathf.Abs((DateTime.Now.Millisecond % 2000) - 1000) / 1000f) + 0.05f);
-            
+
             if (selectedFace != null)
             {
-                selectedFace.enabled = isScaling;
+                selectedFace.enabled = IsScaling;
                 selectedFace.material.color = new Color(1f, 0f, 0f, 0.35f * (Mathf.Abs(((DateTime.Now.Millisecond + 500) % 2000) - 1000) / 100f) + 0.05f);
             }
 
