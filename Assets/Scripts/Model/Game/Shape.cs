@@ -1,6 +1,7 @@
 ﻿using Assets.Scripts.Context;
 using Assets.Scripts.Loaders;
-using Assets.Scripts.Model.Data;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,14 +9,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using Joint = Assets.Scripts.Model.Data.Joint;
+using Data = Assets.Scripts.Model.Data;
 
 namespace Assets.Scripts.Model.Game
 {
     public abstract class Shape
     {
         public ModContext mod; // null == "vanilla"
-        public TranslationData translation;
+        public Data.TranslationData translation;
 
         public UnityEngine.Mesh[] subMeshes;
         public List<TextureInfo> TextureInfoList;
@@ -25,15 +26,58 @@ namespace Assets.Scripts.Model.Game
             this.mod = mod;
         }
 
-        internal static Shape CreateBlank(Child child)
+        internal static Shape CreateBlank(Data.Child child)
         {
-            // create fake partlistdata
-            // can be a part or a block, child.bounds?
-            throw new NotImplementedException();
+            if (child.Bounds == null)
+            {
+                Data.PartData partData = new Data.PartData()
+                {
+                    Uuid = child.ShapeId,
+                    RenderableObject = JObject.FromObject(new Data.Renderable()
+                    {
+                        LodList = new List<Data.Lod>()
+                        {
+                            new Data.Lod()
+                            {
+                                SubMeshList = new List<Data.SubMesh>()
+                                {
+                                    new Data.SubMesh()
+                                    {
+                                        TextureList = new List<string>()
+                                        {
+                                            "$GAME_DATA/Textures/error.tga"
+                                        },
+                                        Material = "PoseAnimDifAsgNor"
+                                    }
+                                },
+                                Mesh = "$GAME_DATA/Mesh/cube.mesh"
+                            }
+                        }
+                    }),
+                    Color = "df7000",
+                    Density = 250, // default ?
+                    Box = new Data.Box() { X = 1, Y = 1, Z = 1 },
+                };
+
+                return new Part(partData);
+            }
+            else
+            {
+                Data.BlockData blockData = new Data.BlockData()
+                {
+                    Uuid = child.ShapeId,
+                    Dif = "$GAME_DATA/Textures/error.tga",
+                    Color = "df7000",
+                    Density = 250,
+                    Tiling = 1
+                };
+                return new Block(blockData);
+            }
+
         }
-        internal static Shape CreateBlank(Joint child)
+        internal static Shape CreateBlank(Data.Joint joint)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException($"Could not find part/block for {joint.ShapeId}");
         }
 
         public abstract GameObject Instantiate(Transform parent);
@@ -42,5 +86,6 @@ namespace Assets.Scripts.Model.Game
         public abstract void LoadMesh();
         public abstract void LoadTextures();
 
+        public abstract int GetWeight(int volume);
     }
 }

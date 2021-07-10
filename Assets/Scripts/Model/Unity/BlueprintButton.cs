@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Context;
+using Assets.Scripts.Extensions;
 using Assets.Scripts.Loaders;
 using Assets.Scripts.Model;
 using Assets.Scripts.Model.Data;
@@ -27,16 +28,25 @@ namespace Assets.Scripts.Model.Unity
             BlueprintContextReference.LoadDescription();
             BlueprintContextReference.LoadIcon();
 
+            Initialize();
+            yield return null;
+        }
+
+        public void Initialize()
+        {
             title.text = BlueprintContextReference.Description.Name;
+
+            long bpBytes = BlueprintContextReference.GetBlueprintSize();
+            extraText.text = bpBytes.ToPrettySize(2);
+
             var image = BlueprintContextReference.Icon;
-            
+
             icon.sprite = Sprite.Create(image, new Rect(0, 0, image.width, image.height), new Vector2(0.5f, 0.5f));
 
             BlueprintSearch.OnTextFilter += ApplySearchFilter;
             // HaCkY code:
             if (!string.IsNullOrWhiteSpace(BlueprintSearch.searchText))
                 this.ApplySearchFilter(BlueprintSearch.searchText);
-            yield return null;
         }
 
         public void Setup(BlueprintContext blueprintContext)

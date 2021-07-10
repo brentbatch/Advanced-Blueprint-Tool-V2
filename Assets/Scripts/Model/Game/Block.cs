@@ -15,7 +15,7 @@ namespace Assets.Scripts.Model.Game
 {
     public class Block : Shape
     {
-        protected BlockData blockData;
+        public BlockData blockData;
 
         public Block(BlockData blockData, ModContext mod = null) : base(mod) 
         {
@@ -24,9 +24,9 @@ namespace Assets.Scripts.Model.Game
 
         public override GameObject Instantiate(Transform parent)
         {
-            var gameObject = UnityEngine.Object.Instantiate(Constants.Instance.Block, parent);
+            var gameObject = UnityEngine.Object.Instantiate(GameController.Instance.Block, parent);
 
-            GameObject subMeshGameObject = UnityEngine.Object.Instantiate(Constants.Instance.Cube, gameObject.transform);
+            GameObject subMeshGameObject = UnityEngine.Object.Instantiate(GameController.Instance.Cube, gameObject.transform);
 
             var pos = subMeshGameObject.transform.position;
             (pos.x, pos.y, pos.z) = (0.5f, 0.5f, 0.5f);
@@ -34,7 +34,7 @@ namespace Assets.Scripts.Model.Game
 
             if (blockData.Glass == true)
             {
-                subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassBlockMaterial);
+                subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(GameController.Instance.glassBlockMaterial);
                 subMeshGameObject.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 subMeshGameObject.GetComponent<Renderer>().receiveShadows = false;
             }
@@ -51,19 +51,19 @@ namespace Assets.Scripts.Model.Game
             var material = gameObject.GetComponentInChildren<MeshRenderer>().material;
 
             var texInfo = TextureInfoList[0];
-            if (texInfo.diffuse != null)
+            if (!string.IsNullOrWhiteSpace(texInfo.diffuse))
             {
                 TextureLoader.Instance.GetTextureAndDoAction(
                     TextureInfoList[0].diffuse,
                     (Texture2D tex) => material.SetTexture("_MainTex", tex));
             }
-            if (texInfo.normal != null)
+            if (!string.IsNullOrWhiteSpace(texInfo.normal))
             {
                 TextureLoader.Instance.GetTextureAndDoAction(
                     TextureInfoList[0].normal,
                     (Texture2D tex) => material.SetTexture("_NorTex", tex));
             }
-            if (texInfo.asg != null)
+            if (!string.IsNullOrWhiteSpace(texInfo.asg))
             {
                 TextureLoader.Instance.GetTextureAndDoAction(
                     TextureInfoList[0].asg,
@@ -105,9 +105,13 @@ namespace Assets.Scripts.Model.Game
             }
             catch (Exception e)
             {
-                Debug.LogError($"An error occurred when loading data for block {translation?.Title}\nError: {e}");
+                Debug.LogException(new Exception($"\nAn error occurred when loading data for block {translation?.Title}", e));
             }
         }
 
+        public override int GetWeight(int volume)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

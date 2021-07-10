@@ -5,6 +5,7 @@ using Assets.Scripts.Model.Data;
 using Assets.Scripts.Model.Game;
 using Assets.Scripts.Model.Unity;
 using Assets.Scripts.Unity;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -25,7 +26,7 @@ namespace Assets.Scripts.Loaders
         public SimpleObjectPool buttonObjectPool;
 
         public static BlueprintButton SelectedBlueprintButton;
-        public static BlueprintObject blueprintObject;
+        public static BlueprintScript blueprintObject;
 
         public Camera Camera;
 
@@ -108,7 +109,7 @@ namespace Assets.Scripts.Loaders
                 }
                 catch(Exception e)
                 {
-                    Debug.LogError($"Error while refreshing blueprints: {e}");
+                    Debug.LogException(new Exception($"\nError while refreshing blueprints", e));
                 }
                 yield return new WaitForSeconds(10f);
             }
@@ -133,49 +134,98 @@ namespace Assets.Scripts.Loaders
                 BlueprintData blueprintData = SelectedBlueprintButton.BlueprintContextReference.LoadBlueprint();
 
 
-                rootGameObject = Instantiate(Constants.Instance.Blueprint);
-                BlueprintObject newblueprintObject = rootGameObject.GetComponent<BlueprintObject>();
+                rootGameObject = Instantiate(GameController.Instance.Blueprint);
+                BlueprintScript blueprintScript = rootGameObject.GetComponent<BlueprintScript>();
+
+                int shapeIdx = 0;
 
                 foreach (var body in blueprintData.Bodies)
                 {
-                    GameObject bodyGameObject = Instantiate(Constants.Instance.Body, rootGameObject.transform);
-                    BodyObject bodyObject = bodyGameObject.GetComponent<BodyObject>();
+                    GameObject bodyGameObject = Instantiate(GameController.Instance.Body, rootGameObject.transform);
+                    BodyScript bodyScript = bodyGameObject.GetComponent<BodyScript>();
 
-                    newblueprintObject.Bodies.Add(bodyObject);
+                    blueprintScript.Bodies.Add(bodyScript);
                     foreach (var child in body.Childs)
                     {
-                        bodyObject.Childs.Add(CreateChildObject(child, bodyGameObject));
+                        ChildScript childScript = CreateChildObject(child, bodyGameObject);
+                        childScript.shapeIdx = shapeIdx;
+                        childScript.Body = bodyScript;
+
+                        bodyScript.Childs.Add(childScript);
+                        shapeIdx++;
                     }
                 }
                 if (blueprintData.Joints != null)
                 {
                     foreach (var joint in blueprintData.Joints)
                     {
-                        newblueprintObject.Joints.Add(CreateJointObject(joint, rootGameObject));
+                        blueprintScript.Joints.Add(CreateJointObject(joint, rootGameObject));
                     }
                 }
 
-                var destination = newblueprintObject.Bodies[0].Childs[0].gameObject.transform.position - Camera.transform.forward * 10;
+                ArrangeJointReferencesUsingData(blueprintScript, blueprintData);
 
-                var cameraState = Camera.GetComponent<UnityTemplateProjects.SimpleCameraController>().m_TargetCameraState;
+                #region handle camera position
+                PlayerController playerController = Camera.GetComponent<PlayerController>();
+                if (playerController.snapToCreation)
+                {
+                    var center = blueprintScript.CalculateCenter();
+                    var destination = center - Camera.transform.forward * playerController.distanceToSnap;
 
-                cameraState.x = destination.x;
-                cameraState.y = destination.y;
-                cameraState.z = destination.z;
+                    var cameraState = playerController.m_TargetCameraState;
 
-                BlueprintLoader.blueprintObject = newblueprintObject;
-                Debug.Log("loaded bp");
+                    cameraState.x = destination.x;
+                    cameraState.y = destination.y;
+                    cameraState.z = destination.z;
+                    //GameObject.Find("Sphere").transform.position = center;
+                }
+                #endregion
+
+                BlueprintLoader.blueprintObject = blueprintScript;
+                Debug.Log("successfully loaded bp");
             }
             catch (Exception e)
             {
-                Debug.LogError($"an error occurred while loading this blueprint.\nError: {e}\n\nStackTrace:{StackTraceUtility.ExtractStringFromException(e)}");
+                Debug.LogException(new Exception($"\nan error occurred while loading this blueprint.", e));
                 if(rootGameObject != null)
                 {
-                    Debug.Log("destroying broken build blueprint");
+                    Debug.Log("failed loading blueprint");
                     Destroy(rootGameObject);
                 }
-
             }
+        }
+
+        /// <summary>
+        /// click event that saves the blueprint
+        /// </summary>
+        public void SaveBlueprint()
+        {
+            MessageController messageController = GameController.Instance.messageController;
+            if (BlueprintLoader.blueprintObject == null)
+            {
+                messageController.WarningMessage("Cannot save a creation that doesn't exist.\nLoad one first.",5);
+                return;
+            }
+
+            //string blueprintDataStr = JsonConvert.SerializeObject(BlueprintLoader.blueprintObject.ToBlueprintData());
+            messageController.YesNoMessage("Are you sure you want to save your creation to this blueprint?", 
+                yesAction: () =>
+                {
+                    try
+                    {
+                        SelectedBlueprintButton.BlueprintContextReference.Blueprint = BlueprintLoader.blueprintObject.ToBlueprintData();
+                        SelectedBlueprintButton.BlueprintContextReference.Save();
+                        messageController.WarningMessage("Creation successfully saved!");
+                    }
+                    catch
+                    {
+                        messageController.WarningMessage("Something went wrong while saving your creation to this blueprint!", 5);
+                    }
+                }, 
+                noAction: () =>
+                {
+                    messageController.WarningMessage("Creation not saved.",5);
+                });
         }
 
         /// <summary>
@@ -185,52 +235,59 @@ namespace Assets.Scripts.Loaders
         {
             try
             {
-                Debug.Log("trying to delete bp");
+                MessageController messageController = GameController.Instance.messageController;
+                messageController.WarningMessage("This functionality is not yet available.");
             }
             catch (Exception e)
             {
                 Debug.LogError(e);
             }
-            throw new NotImplementedException();
         }
 
-        private ChildObject CreateChildObject(Child child, GameObject parent)
+
+        // todo: move methods below to separate class
+        private ChildScript CreateChildObject(Child child, GameObject parent)
         {
             Shape shape = PartLoader.GetShape(child);
 
             GameObject GameObject = shape.Instantiate(parent.transform);
 
-            ChildObject childScript = GameObject.AddComponent<ChildObject>();
+            ChildScript childScript = GameObject.AddComponent<ChildScript>();
             childScript.shape = shape;
 
+            childScript.Controller = child.Controller;
             childScript.SetColor(child.Color);
 
-            if (!Constants.Instance.potatoMode)
+            if (!GameController.Instance.potatoMode)
                 shape.ApplyTextures(GameObject);
-
-            childScript.SetBlueprintPosition(child.Pos);
-            childScript.SetBlueprintRotation(child.Xaxis, child.Zaxis);
 
             if (shape is Block && child.Bounds != null)
             {
                 childScript.SetBlueprintBounds(child.Bounds);
             }
 
+            childScript.SetBlueprintPosition(child.Pos);
+            childScript.SetBlueprintRotation(child.Xaxis, child.Zaxis);
+
+
             return childScript;
         }
 
-        private JointObject CreateJointObject(Joint joint, GameObject parent)
+        private JointScript CreateJointObject(Joint joint, GameObject parent)
         {
             Shape shape = PartLoader.GetJoint(joint);
 
             GameObject gameObject = shape.Instantiate(parent.transform);
-
-            JointObject jointScript = gameObject.AddComponent<JointObject>();
+            
+            JointScript jointScript = gameObject.AddComponent<JointScript>();
             jointScript.shape = shape;
+
+            jointScript.Id = joint.Id;
+            jointScript.Controller = joint.Controller; // todo: this is not gud
 
             jointScript.SetColor(joint.Color);
 
-            if (!Constants.Instance.potatoMode)
+            if (!GameController.Instance.potatoMode)
                 shape.ApplyTextures(gameObject);
 
             jointScript.SetBlueprintPosition(joint.PosA);
@@ -241,7 +298,128 @@ namespace Assets.Scripts.Loaders
             return jointScript;
         }
 
+        /// <summary>
+        /// create child - joint references so both know what they are connected to
+        /// </summary>
+        /// <param name="blueprintScript"></param>
+        /// <param name="blueprintData"></param>
+        private void ArrangeJointReferencesUsingData(BlueprintScript blueprintScript, BlueprintData blueprintData)
+        {
+            Debug.Log($"Arranging child-joint connection references");
+            var dtstart = DateTime.Now;
 
+            // child -> joint is a bit of a pain because scriptchild knows nothing of joints[]
+            int childIndex = 0;
+            IEnumerable<Child> flatDataChildList = blueprintData.Bodies.SelectMany(body => body.Childs).Select(child => child);
+            List<ChildScript> flatLiveChildList = blueprintScript.Bodies.SelectMany(body => body.Childs).Select(child => child).ToList();
+
+            IEnumerable<Joint> flatDataJointList = blueprintData.Joints;
+            List<JointScript> flatLiveJointsList = blueprintScript.Joints;
+
+            if (blueprintData.Joints == null || blueprintData.Joints.Count == 0)
+            {
+                Debug.Log($"no joints found, skipping reference step");
+                return;
+            }
+
+            foreach (Child childData in flatDataChildList)
+            {
+                if (childData.Joints?.Count > 0)
+                {
+                    ChildScript childScript = flatLiveChildList[childIndex];
+                    childScript.connectedJoints = new List<JointScript>();
+                    foreach(JointReference jointRef in childData.Joints)
+                    {
+                        JointScript jointScript = flatLiveJointsList.FirstOrDefault(joint => joint.Id == jointRef.Id);
+                        if (jointScript == default)
+                        {
+                            Debug.LogWarning($"child.joints: reference to missing joint!");
+                            continue;
+                        }
+
+                        childScript.connectedJoints.Add(jointScript);
+
+                        // connect that joint to this child if it has the data to connect to this child:
+                        Joint jointData = flatDataJointList.FirstOrDefault(joint => joint.Id == jointRef.Id);
+                        if (jointData.ChildA == childScript.shapeIdx)
+                        {
+                            jointScript.childA = childScript;
+                        }
+                        if (jointData.ChildB == childScript.shapeIdx)
+                        {
+                            jointScript.childB = childScript;
+                        }
+                    }
+                }
+                childIndex++;
+            }
+
+            //Debug.Log($"Verifying joint-child connection references");
+            // verify connections, perspective: joint
+            int jointIndex = 0;
+            foreach (Joint jointData in flatDataJointList)
+            {
+                JointScript jointScript = flatLiveJointsList[jointIndex];
+
+                if (jointData.ChildA == -1 || jointData.ChildA >= flatLiveChildList.Count)
+                {
+                    if (jointScript.childA == null)
+                    {
+                        Debug.LogError($"Invalid Joints! no joint.childA information. Attempting fix");
+
+                        // todo: attempt fix: find child(s) that is connected to this jointscript, 1 child: childA, 2 childs: check childB || error
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"joint.childA had invalid information! resolved via child.joints!");
+                    }
+                }
+                else
+                {
+                    ChildScript childScriptA = flatLiveChildList[jointData.ChildA];
+                    if (childScriptA.connectedJoints == null)
+                        childScriptA.connectedJoints = new List<JointScript>();
+
+                    if (!childScriptA.connectedJoints.Contains(jointScript))
+                    {
+                        Debug.LogWarning($"child.joints had missing information. resolving with joint.childA info!");
+                        childScriptA.connectedJoints.Add(jointScript);
+                    }
+                }
+
+                if (jointData.ChildB == -1 || jointData.ChildB >= flatLiveChildList.Count)
+                {
+                    if (jointScript.childB == null)
+                    {
+                        // this is allowed. a joint doesn't have to have a childB
+                        // todo: attempt fix: find child(s) that is connected to this jointscript, 1 child: childA, 2 childs: check childB || error
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"joint.childB had invalid information! resolved via child.joints!"); // 'recovered' in prev step
+                    }
+                }
+                else
+                {
+                    ChildScript childScriptB = flatLiveChildList[jointData.ChildB];
+                    if (childScriptB.connectedJoints == null)
+                        childScriptB.connectedJoints = new List<JointScript>();
+
+                    if (!childScriptB.connectedJoints.Contains(jointScript))
+                    {
+                        Debug.LogWarning($"child.joints had missing information. resolving with joint.childA info!");
+                        childScriptB.connectedJoints.Add(jointScript);
+                    }
+                }
+                jointIndex++;
+            }
+
+            // todo: to be complete there should be another verify run on all childs to check if connected joints actually reference them back.
+
+
+            var dt = DateTime.Now - dtstart;
+            Debug.Log($"arrangejoints took {dt.TotalMilliseconds} ms");
+        }
 
     }
 }

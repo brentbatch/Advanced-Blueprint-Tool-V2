@@ -18,7 +18,7 @@ namespace Assets.Scripts.Model.Game
     {
         private static AssimpContext assimpImporter = new AssimpContext();
 
-        protected PartData partData;
+        public PartData partData;
 
         public UnityEngine.Mesh[] pose0;
         public UnityEngine.Mesh[] pose1;
@@ -30,7 +30,7 @@ namespace Assets.Scripts.Model.Game
         public Part(PartData partData, ModContext mod = null) : base(mod)
         {
             this.partData = partData;
-            this.partData.LoadRenderable(mod?.ModFolderPath); // load json file
+            this.partData.LoadRenderableData(mod?.ModFolderPath); // load json file
 
             //importer.SetConfig(new Assimp.Configs.MeshVertexLimitConfig(60000));
             //importer.SetConfig(new Assimp.Configs.MeshTriangleLimitConfig(60000));
@@ -41,7 +41,7 @@ namespace Assets.Scripts.Model.Game
 
         public override GameObject Instantiate(Transform parent)
         {
-            var gameObject = UnityEngine.Object.Instantiate(Constants.Instance.Part, parent);
+            var gameObject = UnityEngine.Object.Instantiate(GameController.Instance.Part, parent);
 
             if (this.subMeshes == null)
                 LoadMesh();
@@ -56,14 +56,14 @@ namespace Assets.Scripts.Model.Game
             for (int i = 0; i < subMeshes.Length; i++)
             {
                 var subMesh = subMeshes[i];
-                GameObject subMeshGameObject = UnityEngine.Object.Instantiate(Constants.Instance.SubMesh, gameObject.transform);
+                GameObject subMeshGameObject = UnityEngine.Object.Instantiate(GameController.Instance.SubMesh, gameObject.transform);
                 subMeshGameObject.GetComponent<MeshFilter>().mesh = subMesh;
 
                 subMeshGameObject.transform.position = this.bounds / 2;
 
                 if ( materials[i % materials.Length].ToLower().Contains("glass"))
                 {
-                    subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(Constants.Instance.glassPartMaterial);
+                    subMeshGameObject.GetComponent<MeshRenderer>().material = new UnityEngine.Material(GameController.Instance.glassPartMaterial);
                     subMeshGameObject.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                     subMeshGameObject.GetComponent<Renderer>().receiveShadows = false;
                 }
@@ -75,6 +75,8 @@ namespace Assets.Scripts.Model.Game
         {
             if (partData.Box != null)
                 this.bounds = new Vector3(partData.Box.X, partData.Box.Z, partData.Box.Y);
+            if (partData.Sphere != null)
+                this.bounds = new Vector3(partData.Sphere.Diameter, partData.Sphere.Diameter, partData.Sphere.Diameter);
             if (partData.Hull != null)
             {
                 this.bounds = new Vector3(partData.Hull.X, partData.Hull.Z, partData.Hull.Y);
@@ -109,19 +111,19 @@ namespace Assets.Scripts.Model.Game
                 int index = i % TextureInfoList.Count;
 
                 var texInfo = TextureInfoList[index];
-                if (texInfo.diffuse != null)
+                if (!string.IsNullOrWhiteSpace(texInfo.diffuse))
                 {
                     TextureLoader.Instance.GetTextureAndDoAction(
                         texInfo.diffuse,
                         (Texture2D tex) => material.SetTexture("_MainTex", tex));
                 }
-                if (texInfo.normal != null)
+                if (!string.IsNullOrWhiteSpace(texInfo.normal))
                 {
                     TextureLoader.Instance.GetTextureAndDoAction(
                         texInfo.normal,
                         (Texture2D tex) => material.SetTexture("_NorTex", tex));
                 }
-                if (texInfo.asg != null)
+                if (!string.IsNullOrWhiteSpace(texInfo.asg))
                 {
                     TextureLoader.Instance.GetTextureAndDoAction(
                         texInfo.asg,
@@ -171,7 +173,7 @@ namespace Assets.Scripts.Model.Game
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed loading model for part {partData.Uuid}\nError: {e} \nTrace: {StackTraceUtility.ExtractStringFromException(e)}");
+                Debug.LogException(new Exception($"\nFailed loading model for part {partData.Uuid}", e));
                 // use cuboid from prefab, stretch if bounds found in partdata
                 // use diffuse & normal from prefab
             }
@@ -198,7 +200,7 @@ namespace Assets.Scripts.Model.Game
                         string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : null;// : nonortga;
 
                         if (!File.Exists(dif)) dif = null; //transparanttga;
-                        if (!File.Exists(asg)) dif = null; //transparanttga;
+                        if (!File.Exists(asg)) asg = null; //transparanttga;
                         if (!File.Exists(nor)) nor = null; //nonortga;
 
                         TextureInfoList.Add(new TextureInfo()
@@ -220,7 +222,7 @@ namespace Assets.Scripts.Model.Game
                             string nor = subMesh.TextureList.Count > 2 ? PathResolver.ResolvePath(subMesh.TextureList[2], mod?.ModFolderPath) : null;// : nonortga;
 
                             if (!File.Exists(dif)) dif = null; //transparanttga;
-                            if (!File.Exists(asg)) dif = null; //transparanttga;
+                            if (!File.Exists(asg)) asg = null; //transparanttga;
                             if (!File.Exists(nor)) nor = null; //nonortga;
 
                             TextureInfoList.Add(new TextureInfo()
@@ -235,7 +237,7 @@ namespace Assets.Scripts.Model.Game
             }
             catch(Exception e)
             {
-                Debug.LogError($"Failed loading textures for part {partData.Uuid}\nError: {e} \nTrace: {StackTraceUtility.ExtractStringFromException(e)}");
+                Debug.LogException(new Exception($"\nFailed loading textures for part {partData.Uuid}", e));
 
             }
         }
@@ -269,5 +271,9 @@ namespace Assets.Scripts.Model.Game
             }
         }
 
+        public override int GetWeight(int volume)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

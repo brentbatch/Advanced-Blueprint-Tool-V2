@@ -82,7 +82,7 @@ namespace Assets.Scripts.Context
                         }
                         catch (Exception e)
                         {
-                            Debug.LogError($"An error occurred when trying to load mod data\nError:{e}");
+                            Debug.LogException(new Exception($"\nAn error occurred when trying to load mod data", e));
                         }
                     }
                 });
