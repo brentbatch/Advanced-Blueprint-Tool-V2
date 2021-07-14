@@ -81,10 +81,14 @@ namespace Assets.Scripts.Tool
         }
         public override bool OnEsc(bool isKeyDown)
         {
-            //CloseAllUI();
-            return base.OnEsc(isKeyDown);
+            return !CloseAllUI() && base.OnEsc(isKeyDown);
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>true = closed a ui element</returns>
         public bool CloseAllUI()
         {
             return CloseLoadBlueprintMenu()

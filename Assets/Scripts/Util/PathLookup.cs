@@ -189,7 +189,7 @@ namespace Assets.Scripts.Util
         }
 
         // windows is case insensitive , no bullshit required:
-        public string Transform(string path) => path
+        public static string Transform(string path) => path;
 
 #endif
     }

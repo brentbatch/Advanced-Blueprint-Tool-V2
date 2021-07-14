@@ -76,11 +76,10 @@ public class HotbarController : MonoBehaviour
             int btnIndex = i;
             hotbarButton.onSelected += () =>
             {
+                IsToolBarSelected = true;
                 // update selection outline:
                 toolHotbarButtons.ForEach(btn => { if (btn != hotbarButton) btn.UnSelected(); });
 
-                IsToolBarSelected = true;
-                ShowToolBarHighlight();
                 indexToolHotbarButton = btnIndex;
                 //int index = (btnIndex + offsetTool).mod(tools.Count);
                 int index = (btnIndex + offsetTool);
@@ -91,7 +90,10 @@ public class HotbarController : MonoBehaviour
                 toolController.selectedTool?.OnUnEquip();
                 toolController.selectedTool = tool;
                 tool.OnEquip();
+                functionHotbarButtons[indexFunctionHotbarButton].Selected();
+                IsToolBarSelected = true;
 
+                ShowToolBarHighlight();
                 FillFunctionIcons();
             };
         }
@@ -105,20 +107,20 @@ public class HotbarController : MonoBehaviour
             int btnIndex = i;
             hotbarButton.onSelected += () =>
             {
+                IsToolBarSelected = false;
                 // unselect other buttons:
                 functionHotbarButtons.ForEach(btn => { if (btn != hotbarButton) btn.UnSelected(); });
 
-                IsToolBarSelected = false;
-                ShowToolBarHighlight();
                 indexFunctionHotbarButton = btnIndex;
                 int index = (btnIndex + offsetFunction);
                 toolController.selectedTool.SelectToolFunction(index);
+                ShowToolBarHighlight();
             };
             // btnclick from UI:
             hotbarButton.onClick += () => {
                 IsToolBarSelected = false;
-                ShowToolBarHighlight();
                 toolController.selectedTool.OnHotBarFunctionClick();
+                ShowToolBarHighlight();
             };
 
         }

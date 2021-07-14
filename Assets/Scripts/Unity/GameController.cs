@@ -91,7 +91,12 @@ namespace Assets.Scripts.Unity
                     escapeMenu.Toggle();
                 }
             };
-
+            inputActions.UI.Escape.performed += ctx => {
+                if (toolController.selectedTool?.OnEsc(ctx.ReadValueAsButton()) != false && ctx.ReadValueAsButton())
+                {
+                    escapeMenu.Toggle();
+                }
+            };
 
             Button focusBtn = GameObject.Find("PullFocusButton").GetComponent<Button>();
             focusBtn.onClick.AddListener(() =>
@@ -121,16 +126,14 @@ namespace Assets.Scripts.Unity
 
         public static void SetCursorState(bool cursorVisible)
         {
-            Instance.playerInput.currentActionMap = cursorVisible ? Instance.inputActions.UI.Get() : Instance.inputActions.Game.Get();
+            var newmap = cursorVisible ? Instance.inputActions.UI.Get() : Instance.inputActions.Game.Get();
+            if (Instance.playerInput.currentActionMap != newmap) Instance.playerInput.currentActionMap = newmap;
 
             IsCursorVisible = cursorVisible;
             Cursor.lockState = IsCursorVisible ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = IsCursorVisible;
             //Time.timeScale = cursorVisible ? 0 : 1;
-            if (!cursorVisible)
-            {
-                EventSystem.current.SetSelectedGameObject(null);
-            }
+            EventSystem.current.SetSelectedGameObject(null);
         }
 
 

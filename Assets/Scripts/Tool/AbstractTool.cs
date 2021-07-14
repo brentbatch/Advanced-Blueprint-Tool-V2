@@ -79,7 +79,6 @@ namespace Assets.Scripts.Tool
             ShowToolInfo();
             TitleText.enabled = true;
             DescriptionText.enabled = false;
-            selectedToolFunction?.OnEquip?.Invoke();
         }
         /// <summary>
         /// default implementation: toolfunction.onUnEquip
@@ -89,7 +88,6 @@ namespace Assets.Scripts.Tool
             ShowToolInfo();
             TitleText.enabled = true;
             DescriptionText.enabled = false;
-            selectedToolFunction?.OnUnEquip?.Invoke();
         }
         /// <summary>
         /// default implementation: toolfunction.onUpdate
@@ -155,6 +153,10 @@ namespace Assets.Scripts.Tool
             selectedToolFunction?.OnPreviousRotation?.Invoke(isKeyDown);
         }
 
+
+        public virtual void OnArrows(Vector2 vector2)
+        {
+        }
         public virtual void OnR(bool isKeyDown)
         {
             //if (HotbarController.IsToolBarSelected)

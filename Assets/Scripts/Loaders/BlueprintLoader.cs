@@ -203,7 +203,7 @@ namespace Assets.Scripts.Loaders
             MessageController messageController = GameController.Instance.messageController;
             if (BlueprintLoader.blueprintObject == null)
             {
-                messageController.WarningMessage("Cannot save a creation that doesn't exist.\nLoad one first.",5);
+                messageController.WarningMessage("Cannot save a creation that doesn't exist.\nLoad one first.",3);
                 return;
             }
 
@@ -219,13 +219,13 @@ namespace Assets.Scripts.Loaders
                     }
                     catch(Exception e)
                     {
-                        messageController.WarningMessage("Something went wrong while saving your creation to this blueprint!", 5);
+                        messageController.WarningMessage("Something went wrong while saving your creation to this blueprint!\nCheck the log for more information", 5);
                         Debug.LogException(e, this);
                     }
                 }, 
                 noAction: () =>
                 {
-                    messageController.WarningMessage("Creation not saved.",5);
+                    messageController.WarningMessage("Creation not saved.",2);
                 });
         }
 
