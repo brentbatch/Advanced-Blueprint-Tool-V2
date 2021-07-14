@@ -1,5 +1,7 @@
-﻿using Assets.Scripts.Model.Data;
+﻿using Assets.Scripts.Extensions;
+using Assets.Scripts.Model.Data;
 using Assets.Scripts.Unity;
+using Assets.Scripts.Util;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -10,66 +12,70 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
-public static class PathResolver
+public sealed class PathResolver
 {
+    private static readonly PathResolver instance = new PathResolver();
+    public static PathResolver Instance => instance;
 
-    private static bool pathsLoaded;
-    /*
-    public delegate void PathsLoaded();
-    public static event PathsLoaded OnPathsLoaded;
 
-    public static void WhenPathsLoaded(PathsLoaded task)
-    {
-        if (pathsLoaded)
-            task();
-        else
-            OnPathsLoaded += task;
-    }*/
+    // regexes for path matching:
+    private readonly Regex dataRegex = new Regex(@"^\.\./data", RegexOptions.IgnoreCase);
+    private readonly Regex modDataRegex = new Regex(@"^\$mod_data", RegexOptions.IgnoreCase);
+    private readonly Regex contentDataRegex = new Regex(@"^\$content_data", RegexOptions.IgnoreCase);
+    private readonly Regex contentDataUuidRegex = new Regex(@"(?i)(^\$content_data_)([0-9A-F]{8}[-](?:[0-9A-F]{4}[-]){3}[0-9A-F]{12})", RegexOptions.IgnoreCase);
+    private readonly Regex gameDataRegex = new Regex(@"^\$game_data", RegexOptions.IgnoreCase);
+    private readonly Regex survivalDataRegex = new Regex(@"^\$survival_data", RegexOptions.IgnoreCase);
+    private readonly Regex challengeDataRegex = new Regex(@"^\$challenge_data", RegexOptions.IgnoreCase);
 
-    private static UpgradeResolver upgradeResolver;
-    private static readonly Dictionary<string, string> workshopModUuids = new Dictionary<string, string>(); // todo: fill this array
-    private static string scrapMechanicPath;
-    private static string scrapDataPath;
-    private static string scrapSurvivalPath;
-    private static string scrapChallengePath;
-    private static string workShopPath;
+    private readonly UpgradeResolver upgradeResolver;
+    private readonly Dictionary<string, string> workshopModUuidPaths = new Dictionary<string, string>();
 
-    private static string scrapMechanicAppdataPath1;
-    public static string ScrapMechanicAppdataUserPath
-    {
-        get
-        {
-            if (scrapMechanicAppdataPath1 == null)
-                FindAppdataPath();
-            return scrapMechanicAppdataPath1;
-        }
-        private set => scrapMechanicAppdataPath1 = value;
-    }
+    private string steamInstallationPath;
 
-    public static string WorkShopPath
-    {
-        get
-        {
-            if (workShopPath == null)
-                Initialize();
-            return workShopPath;
-        }
-        set => workShopPath = value;
-    }
+    private string workShopPath;
+    private string scrapMechanicPath;
+    private string scrapMechanicAppdataUserPath;
 
-    public static void Initialize()
+    private readonly string scrapDataPath;
+    private readonly string scrapSurvivalPath;
+    private readonly string scrapChallengePath;
+
+
+    public static string WorkShopPath => Instance.workShopPath;
+    public static string ScrapMechanicPath => Instance.scrapMechanicPath;
+    public static string ScrapMechanicAppdataUserPath => Instance.scrapMechanicAppdataUserPath;
+
+    // Explicit static constructor to tell C# compiler
+    // not to mark type as beforefieldinit
+    static PathResolver() { }
+    private PathResolver()
     {
         FindAppdataPath();
         FindPaths();
-        string upgradeFilePath = ResolvePath(GameController.Instance.upgradeResourcesPath);
+        ValidateAndCorrectPaths();
+
+        scrapDataPath = Path.Combine(scrapMechanicPath, "Data");
+        scrapSurvivalPath = Path.Combine(scrapMechanicPath, "Survival");
+        scrapChallengePath = Path.Combine(scrapMechanicPath, "ChallengeData");
+        CollectWorkshopModPaths();
+
+        string upgradeFilePath = PathLookup.Transform(Resolve(GameController.Instance.upgradeResourcesPath));
         upgradeResolver = new UpgradeResolver(upgradeFilePath);
     }
 
+
     public static string ResolvePath(string path, string parentPath = null)
+    {
+        path = Instance.Resolve(path, parentPath);
+        return PathLookup.Transform(path);
+    }
+
+    private string Resolve(string path, string parentPath = null)
     {
         if (string.IsNullOrWhiteSpace(path))
             return "";
@@ -78,66 +84,92 @@ public static class PathResolver
         {
             path = upgradeResolver.UpgradeResource(path);
         }
-        path = path.ToLower().Replace(@"/", @"\");
 
-        if (path.Contains(@"..\data") || path.Contains("$mod_data") || path.Contains("$content_data"))
+        path = path
+            .Replace('\\', Path.DirectorySeparatorChar)
+            .Replace('/', Path.DirectorySeparatorChar);
+
+        if (dataRegex.IsMatch(path) || modDataRegex.IsMatch(path) || contentDataRegex.IsMatch(path))
         {
             if (parentPath == null)
                 throw new InvalidDataException("Invalid path or parent path not provided");
             return path
-                .Replace(@"..\data", parentPath)
-                .Replace("$mod_data", parentPath)
-                .Replace("$content_data", parentPath);
+                .Replace(dataRegex, parentPath)
+                .Replace(modDataRegex, parentPath)
+                .Replace(contentDataRegex, parentPath);
         }
-        if (!pathsLoaded)
-            Initialize();
-
-        if (path.Contains("$content_data_"))
+        
+        if (contentDataUuidRegex.IsMatch(path))
         {
-            string uuid = path.Substring("$content_data_".Length, "23f3a760-bb11-46b0-b2ac-2370aedd10be".Length);
-            return path
-                .Replace($"$content_data_{uuid}", workshopModUuids[uuid]);
+            MatchCollection matchCollection = contentDataRegex.Matches(path);
+            Match uuidMatch = matchCollection[1];
+
+            if (workshopModUuidPaths.TryGetValue(uuidMatch.Value, out string workshopModPath))
+            {
+                return path.Replace(contentDataUuidRegex, workshopModPath);
+            }
+            else
+            {
+                throw new InvalidDataException($"{path} is invalid");
+            }
         }
+
 
         return path
-            .Replace("$game_data", scrapDataPath)
-            .Replace("$survival_data", scrapSurvivalPath)
-            .Replace("$challenge_data", scrapChallengePath);
+            .Replace(gameDataRegex, scrapDataPath)
+            .Replace(survivalDataRegex, scrapSurvivalPath)
+            .Replace(challengeDataRegex, scrapChallengePath);
     }
 
 
-    private static void FindAppdataPath()
+    private void FindAppdataPath()
     {
-        string userdir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\Axolot Games\\Scrap Mechanic\\User";
-
-        // find steam user scrap save dir:
-        DateTime lasthigh = DateTime.MinValue;
-        foreach (string subdir in Directory.GetDirectories(userdir)) //get user_numbers folder that is last used
+        try
         {
-            DirectoryInfo fi1 = new DirectoryInfo(subdir + @"\Save");
-            DateTime created = fi1.LastWriteTime;
+            string userdir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Axolot Games",  "Scrap Mechanic", "User");
 
-            if (created > lasthigh)
+            // find steam user scrap save dir:
+            DateTime lasthigh = DateTime.MinValue;
+            foreach (string subdir in Directory.GetDirectories(userdir)) //get user_numbers folder that is last used
             {
-                ScrapMechanicAppdataUserPath = subdir;
-                lasthigh = created;
+                DirectoryInfo fi1 = new DirectoryInfo(Path.Combine(subdir, "Save"));
+                DateTime created = fi1.LastWriteTime;
+
+                if (created > lasthigh)
+                {
+                    scrapMechanicAppdataUserPath = subdir;
+                    lasthigh = created;
+                }
+            }
+
+        }
+        catch
+        {
+            Debug.LogWarning("Failed finding scrap mechanic user directory. Opening open folder dialog.");
+            while(string.IsNullOrEmpty(scrapMechanicAppdataUserPath) || !Directory.Exists(scrapMechanicAppdataUserPath))
+            {
+                string[] paths = StandaloneFileBrowser.OpenFolderPanel("Please select your Scrap Mechanic USER_ directory", Environment.CurrentDirectory, false);
+                string path = paths?.FirstOrDefault();
+                if (!string.IsNullOrEmpty(path) && Directory.Exists(Path.Combine(path, "Save")) && Directory.Exists(Path.Combine(path, "Blueprints")))
+                {
+                    scrapMechanicAppdataUserPath = path;
+                }
             }
         }
     }
 
-    private static bool IsScrapMechanicPath(string path)
+    private bool IsScrapMechanicPath(string path)
     {
-        return File.Exists(Path.Combine(path, "Release", "ScrapMechanic.exe"));
+        return File.Exists(Path.Combine(path??"", "Release", "ScrapMechanic.exe"));
     }
 
-    private static void FindPaths()
+    private void FindPaths()
     {
-        string steamInstallationPath = "";
         try
         {
             // find steam folder
             steamInstallationPath = Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\Valve\Steam", "SteamPath", "").ToString().Replace('/', Path.DirectorySeparatorChar);
-            
+
             if (!string.IsNullOrEmpty(steamInstallationPath))
             {
                 // could use this to load persona name:
@@ -148,12 +180,12 @@ public static class PathResolver
             string steamApps = Path.Combine(steamInstallationPath, "steamapps");
             if (Directory.Exists(steamApps))
             {
-                PathResolver.workShopPath = Path.Combine(steamApps, "workshop", "content", "387990");
+                this.workShopPath = Path.Combine(steamApps, "workshop", "content", "387990");
 
                 string scrapMechanicPath = Path.Combine(steamApps, "common", "Scrap Mechanic");
                 if (IsScrapMechanicPath(scrapMechanicPath))
                 {
-                    PathResolver.scrapMechanicPath = scrapMechanicPath;
+                    this.scrapMechanicPath = scrapMechanicPath;
                 }
                 else
                 {
@@ -165,14 +197,14 @@ public static class PathResolver
                         string library = libraryFile[i.ToString()].Value;
                         if (Directory.Exists(library))
                         {
-                            scrapMechanicPath = Path.Combine(library, "steamApps", "common", "Scrap Mechanic");
+                            scrapMechanicPath = Path.Combine(library, "steamapps", "common", "Scrap Mechanic");
                             if (IsScrapMechanicPath(scrapMechanicPath))
                             {
-                                PathResolver.scrapMechanicPath = scrapMechanicPath;
-                                PathResolver.workShopPath = Path.Combine(
+                                this.scrapMechanicPath = scrapMechanicPath;
+                                this.workShopPath = Path.Combine(
                                     Directory.GetParent(
                                         Directory.GetParent(
-                                            PathResolver.scrapMechanicPath).FullName).FullName,
+                                            this.scrapMechanicPath).FullName).FullName,
                                     "workshop", "content", "387990");
                                 break;
                             }
@@ -185,75 +217,60 @@ public static class PathResolver
         {
             Debug.LogException(e);
         }
+    }
 
-        string folder = steamInstallationPath == "" ? Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) : steamInstallationPath;
-        while (!IsScrapMechanicPath(PathResolver.scrapMechanicPath))
+    private void ValidateAndCorrectPaths()
+    {
+        string openFolder = string.IsNullOrEmpty(steamInstallationPath) ? Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) : steamInstallationPath;
+        while (!IsScrapMechanicPath(this.scrapMechanicPath))
         {
-            StandaloneFileBrowser.OpenFolderPanelAsync("Please select the Scrap Mechanic folder", steamInstallationPath, false, (string[] paths) =>
-            {
-                if (IsScrapMechanicPath(paths.First()))
-                {
-                    PathResolver.scrapMechanicPath = paths.First();
-                    if (!Directory.Exists(PathResolver.workShopPath))
-                    {
-                        // try find workshop
-                        PathResolver.workShopPath = Path.Combine(
-                            Directory.GetParent(
-                                Directory.GetParent(
-                                    PathResolver.scrapMechanicPath).FullName).FullName, 
-                            "workshop", "content", "387990");
-                    }
-                }
-            });
-        }
+            string[] paths = StandaloneFileBrowser.OpenFolderPanel("Please select the Scrap Mechanic folder", openFolder, false);
+            string path = paths.FirstOrDefault();
 
-        while (!Directory.Exists(PathResolver.workShopPath))
-        {
-            StandaloneFileBrowser.OpenFolderPanelAsync("Please select the Workshop folder containing workshop blueprints", steamInstallationPath, false, (string[] paths) =>
-            {
-                if (!string.IsNullOrEmpty(paths?.First()))
-                {
-                    PathResolver.workShopPath = paths?.First();
-                }
-            });
-        }
+            if (!IsScrapMechanicPath(path))
+                continue;
 
-        while (!Directory.Exists(PathResolver.ScrapMechanicAppdataUserPath))
-        {
-            StandaloneFileBrowser.OpenFolderPanelAsync("Please select your User_<numbersHere> folder", steamInstallationPath, false, (string[] paths) =>
+            this.scrapMechanicPath = path;
+            // try locate workshop dir if not set yet:
+            if (!Directory.Exists(this.workShopPath))
             {
-                if (!string.IsNullOrEmpty(paths?.First()))
-                {
-                    PathResolver.ScrapMechanicAppdataUserPath = paths?.First();
-                }
-            });
-        }
-
-        scrapDataPath = Path.Combine(scrapMechanicPath, "Data");
-        scrapSurvivalPath = Path.Combine(scrapMechanicPath, "Survival");
-        scrapChallengePath = Path.Combine(scrapMechanicPath, "ChallengeData");
-
-        foreach (string dir in Directory.GetDirectories(workShopPath))
-        {
-            string description = Path.Combine(dir, "description.json");
-            if (File.Exists(description))
-            {
-                try
-                {
-                    DescriptionData descriptionData = JsonConvert.DeserializeObject<DescriptionData>(File.ReadAllText(description));
-                    if(!string.IsNullOrEmpty(descriptionData.LocalId) 
-                            && !workshopModUuids.ContainsKey(descriptionData.LocalId)
-                            && descriptionData.Type == "Blocks and Parts")
-                        workshopModUuids.Add(descriptionData.LocalId, dir);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"Could not load {description}\nError: {e}");
-                }
+                this.workShopPath = Path.Combine(
+                    Directory.GetParent(Directory.GetParent(this.scrapMechanicPath).FullName).FullName,
+                    "workshop", "content", "387990");
             }
         }
 
-        pathsLoaded = true;
+        while (!Directory.Exists(this.workShopPath))
+        {
+            string[] paths = StandaloneFileBrowser.OpenFolderPanel("Please select the Workshop folder containing workshop blueprints", openFolder, false);
+            if (!string.IsNullOrEmpty(paths?.FirstOrDefault()))
+            {
+                this.workShopPath = paths?.FirstOrDefault();
+            }
+        }
     }
 
+    private void CollectWorkshopModPaths()
+    {
+        foreach (string dir in Directory.GetDirectories(workShopPath))
+        {
+            string description = Path.Combine(dir, "description.json");
+            if (!File.Exists(description))
+                continue;
+            try
+            {
+                DescriptionData descriptionData = JsonConvert.DeserializeObject<DescriptionData>(File.ReadAllText(description));
+                if (!string.IsNullOrEmpty(descriptionData.LocalId)
+                    && !workshopModUuidPaths.ContainsKey(descriptionData.LocalId)
+                    && descriptionData.Type == "Blocks and Parts")
+                {
+                    workshopModUuidPaths.Add(descriptionData.LocalId, dir);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Could not load {description}\nError: {e}");
+            }
+        }
+    }
 }

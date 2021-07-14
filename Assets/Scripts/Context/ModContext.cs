@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.Loaders;
 using Assets.Scripts.Model.Data;
+using Assets.Scripts.Util;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
@@ -20,9 +21,9 @@ namespace Assets.Scripts.Context
         public ConcurrentBag<string> partUuids = new ConcurrentBag<string>();
 
 
-        public static bool IsValidModPath(string modPath) =>
+        public static bool IsValidModPath(string modPath) => 
             File.Exists(Path.Combine(modPath, "description.json")) &&
-            Directory.Exists(Path.Combine(modPath, "Objects", "Database", "ShapeSets"));
+            Directory.Exists(PathLookup.Transform(Path.Combine(modPath, "Objects", "Database", "ShapeSets")));
 
         public static bool IsValidShapeListPath(string shapeListPath) =>
             Path.GetExtension(shapeListPath).ToLower() == ".json";
@@ -58,7 +59,7 @@ namespace Assets.Scripts.Context
 
         public void LoadModShapes()
         {
-            Parallel.ForEach(Directory.GetFiles(Path.Combine(this.ModFolderPath, "Objects", "Database", "ShapeSets")),
+            Parallel.ForEach(Directory.GetFiles(PathLookup.Transform(Path.Combine(this.ModFolderPath, "Objects", "Database", "ShapeSets"))),
                 shapeListFilePath =>
                 {
                     if (IsValidShapeListPath(shapeListFilePath))

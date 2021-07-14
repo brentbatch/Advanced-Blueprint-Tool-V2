@@ -16,13 +16,13 @@ public class UpgradeResolver
         UpgradeResourcesData upgradeData = JsonConvert.DeserializeObject<UpgradeResourcesData>(File.ReadAllText(upgradeResourcesFile));
         foreach(var upgrade in upgradeData.Upgrade.SelectMany(listlist => listlist))
         {
-            UpgradeResources.Add(upgrade[0].ToLower().Replace(@"/", @"\"), upgrade[1]);
+            UpgradeResources.Add(upgrade[0], upgrade[1]);
         }
     }
 
     public string UpgradeResource(string path = "")
     {
-        if (UpgradeResources.TryGetValue(path.ToLower().Replace(@"/", @"\"), out string upgrade))
+        if (UpgradeResources.TryGetValue(path, out string upgrade))
         {
             return upgrade;
         }

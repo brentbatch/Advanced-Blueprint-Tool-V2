@@ -15,6 +15,7 @@ using Assets.Scripts.Model.Game;
 using Assets.Scripts.Context;
 using Joint = Assets.Scripts.Model.Data.Joint;
 using System.Threading;
+using Assets.Scripts.Util;
 
 namespace Assets.Scripts.Loaders
 {
@@ -47,7 +48,7 @@ namespace Assets.Scripts.Loaders
         {
             // vanilla shapes/blocks:
             Debug.Log($"Start Loading parts - Vanilla Game {DateTime.Now:O}");
-            string basePath = PathResolver.ResolvePath("$Game_data");
+            string basePath = PathResolver.ResolvePath("$game_data");
             LoadVanilla(basePath);
             Debug.Log($"Start Loading parts - Vanilla Survival {DateTime.Now:O}");
             basePath = PathResolver.ResolvePath("$survival_data");
@@ -87,7 +88,7 @@ namespace Assets.Scripts.Loaders
         
         public void LoadVanilla(string basePath)
         {
-            string shapeSetFilePath = Path.Combine(basePath, "Objects/Database/shapesets.json");
+            string shapeSetFilePath = PathLookup.Transform(Path.Combine(basePath, "Objects/Database/shapesets.json"));
 
             var shapeSets = JsonConvert.DeserializeObject<ShapeSetListData>(File.ReadAllText(shapeSetFilePath));
 
@@ -157,6 +158,7 @@ namespace Assets.Scripts.Loaders
             {
                 // Debug.Log($"Loading Language files {DateTime.Now:O}"); too much logging
                 languageFolderPath = Path.Combine(languageFolderPath, "English");
+                languageFolderPath = PathLookup.Transform(languageFolderPath);
                 if (!Directory.Exists(languageFolderPath))
                     return;
 

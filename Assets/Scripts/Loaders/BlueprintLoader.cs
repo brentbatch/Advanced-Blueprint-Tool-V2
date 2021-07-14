@@ -44,7 +44,7 @@ namespace Assets.Scripts.Loaders
 
         private void StartLoadBlueprints()
         {
-            string[] paths = new string[] { Path.Combine(PathResolver.ScrapMechanicAppdataUserPath, "blueprints"), PathResolver.WorkShopPath };
+            string[] paths = new string[] { Path.Combine(PathResolver.ScrapMechanicAppdataUserPath, "Blueprints"), PathResolver.WorkShopPath };
 
             foreach (string path in paths)
             {
@@ -217,9 +217,10 @@ namespace Assets.Scripts.Loaders
                         SelectedBlueprintButton.BlueprintContextReference.Save();
                         messageController.WarningMessage("Creation successfully saved!");
                     }
-                    catch
+                    catch(Exception e)
                     {
                         messageController.WarningMessage("Something went wrong while saving your creation to this blueprint!", 5);
+                        Debug.LogException(e, this);
                     }
                 }, 
                 noAction: () =>
