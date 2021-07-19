@@ -24,6 +24,7 @@ namespace Assets.Scripts.Tool
         public Action<bool> OnRightClick;
         public Action<bool> OnFunctionInfo;
         public Action<bool> OnInteract;
+        public Action<Vector3> OnMove2;
         public Action<bool> OnNextRotation;
         public Action<bool> OnPreviousRotation;
         public Action<bool> OnR;

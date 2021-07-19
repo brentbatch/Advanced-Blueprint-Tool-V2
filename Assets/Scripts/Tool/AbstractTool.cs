@@ -22,6 +22,7 @@ namespace Assets.Scripts.Tool
         public ToolFunction selectedToolFunction;
         public int SelectedToolIndex { get; private set; }
 
+        protected Vector3 previousArrowsState;
         protected bool leftClickButtonState;
         protected bool rightClickButtonState;
         protected bool interactButtonState;
@@ -154,8 +155,10 @@ namespace Assets.Scripts.Tool
         }
 
 
-        public virtual void OnArrows(Vector2 vector2)
+        public virtual void OnMove2(Vector3 vector3)
         {
+            previousArrowsState = vector3;
+            selectedToolFunction?.OnMove2?.Invoke(vector3);
         }
         public virtual void OnR(bool isKeyDown)
         {

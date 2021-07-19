@@ -45,7 +45,7 @@ namespace Assets.Scripts.Tool
                 //new ToolFunction { title = "select shapes", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ),
                 //    OnEquip = ShowSelection, OnInteract = ToggleSelectionMenu, OnLeftClick = Selection, OnUnEquip = StopSelection, OnRightClick = b => CancelSelection()},
                 new ToolFunction { title = "move shapes", description = "", sprite = Resources.Load<Sprite>( "Textures/move" ),
-                    OnEquip = EquipMoveFunction, OnInteract = ToggleMoveMenu, OnLeftClick = SelectionMoveLMB, OnUnEquip = UnEquipMoveFunction, OnRightClick = SelectionMoveRMB },
+                    OnEquip = EquipMoveFunction, OnInteract = ToggleMoveMenu, OnLeftClick = SelectionMoveLMB, OnUnEquip = UnEquipMoveFunction, OnRightClick = SelectionMoveRMB, OnMove2 = MoveSelectionByArrows },
                 new ToolFunction { title = "rotate shapes", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ),OnEquip = () => {
                     MessageController messageController = GameController.Instance.messageController;
                     messageController.WarningMessage("Feature not yet implemented.");
@@ -58,7 +58,6 @@ namespace Assets.Scripts.Tool
             selectedToolFunction = functions[0];
 
         }
-
 
         public override void OnStart()
         {
@@ -95,6 +94,15 @@ namespace Assets.Scripts.Tool
                 selectionGizmo.CancelSelection();
                 moveGizmo.SetActive(false);
             }
+        }
+
+        private void MoveSelectionByArrows(Vector3 vector3)
+        {
+            Vector3 direction = PlayerController.gameObject.transform.TransformDirection(vector3) * 1.4f;
+            Vector3Int offset = Vector3Int.RoundToInt(direction);
+
+            OnMove(offset);
+            moveGizmo.SetPosition(selectionGizmo.selectionFilter.GetCenter());
         }
 
         private void UnEquipMoveFunction()
