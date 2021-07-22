@@ -61,10 +61,10 @@ namespace Assets.Scripts.CustomGizmos
         {
             gameObject.SetActive(active);
             Cube.enabled = active;
+            OnSelect = onSelect ?? (vec => { });
 
             if (active)
             {
-                OnSelect = onSelect ?? (vec => { });
                 if (OnSelect == null) Debug.LogWarning("SelectionGizmo.SetActive 'OnSelect' parameter is null!");
             }
             else
@@ -77,10 +77,12 @@ namespace Assets.Scripts.CustomGizmos
         {
             IsScaling = false;
             IsSelecting = false;
-            selectionFilter = new SelectionFilter();
+            selectionFilter = default;
             gameObject.transform.position = Vector3.zero;
             gameObject.transform.localScale = Vector3.zero;
         }
+
+        public bool HasSelection() => !selectionFilter.Equals(default(SelectionFilter));
 
         public bool Selection(bool keyDown)
         {

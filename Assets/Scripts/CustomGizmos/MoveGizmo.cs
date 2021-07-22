@@ -57,10 +57,10 @@ namespace Assets.Scripts.CustomGizmos
         public void SetActive(bool active, Action<Vector3Int> onMove = null)
         {
             gameObject.SetActive(active);
+            OnMove = onMove ?? (vec => { });
 
             if (active)
             {
-                OnMove = onMove ?? (vec => { });
                 if (onMove == null) Debug.LogWarning("MoveGizmo.SetActive 'OnMove' parameter is null!");
             }
             else
@@ -86,18 +86,19 @@ namespace Assets.Scripts.CustomGizmos
                 Debug.LogWarning("'MoveGizmo.Move' available AFTER doing SetActive!");
                 return false;
             }
+            bool wasMoving = IsMoving;
             IsMoving = keyDown && selectedGizmoGameObject != null;
-            return selectedGizmoGameObject != null; // has something selected , it will move something
+            return selectedGizmoGameObject != null || wasMoving; // has something selected , it will move something
         }
 
         private bool ClosestMoveGizmoInSight(out RaycastHit raycastHit)
         {
             Transform playerTransform = PlayerController.gameObject.transform;
-            RaycastHit[] raycastHits = Physics.RaycastAll(playerTransform.position, playerTransform.forward, 200f, 1 << LayerMask.NameToLayer("Gizmo")); 
-            raycastHit = raycastHits.Where(hit => hit.transform.CompareTag("MoveGizmo"))
-                                            .OrderBy(hit => (hit.point - playerTransform.position).magnitude)
-                                            .FirstOrDefault();
-            return !raycastHit.Equals(default(RaycastHit));
+            IOrderedEnumerable<RaycastHit> raycastHits = Physics.RaycastAll(playerTransform.position, playerTransform.forward, 200f, 1 << LayerMask.NameToLayer("Gizmo"))
+                .Where(hit => hit.transform.CompareTag("MoveGizmo"))
+                .OrderBy(hit => (hit.point - playerTransform.position).magnitude); 
+            raycastHit = raycastHits.FirstOrDefault();
+            return raycastHits.Any();
         }
 
         private void FixedUpdate()
