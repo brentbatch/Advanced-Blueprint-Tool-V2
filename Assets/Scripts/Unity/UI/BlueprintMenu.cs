@@ -104,7 +104,7 @@ namespace Assets.Scripts.Unity.UI
                             blueprintCtx.btn.Initialize();
                             if (SelectedBlueprintButton == blueprintCtx.btn)
                                 SelectBlueprintButton(SelectedBlueprintButton);
-                        });
+                        }).LogErrors();
                     }
                     else if (File.Exists($"{path}/blueprint.json"))
                     {
@@ -117,7 +117,7 @@ namespace Assets.Scripts.Unity.UI
                             newButton.transform.SetParent(contentPanel);
                             BlueprintButton blueprintButton = newButton.GetComponent<BlueprintButton>();
                             blueprintButton.Setup(bp);
-                        });
+                        }).LogErrors();
                     }
                 }
                 else
@@ -136,7 +136,7 @@ namespace Assets.Scripts.Unity.UI
                             }
                             Destroy(blueprintCtx.btn.gameObject);
                             LoadedBlueprints.Remove(path);
-                        });
+                        }).LogErrors();
                     }
                 }
             }
