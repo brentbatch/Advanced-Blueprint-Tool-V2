@@ -11,11 +11,14 @@ using System.Collections;
 using Newtonsoft.Json;
 using Assets.Scripts.Model.Data;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Assets.Scripts.Model.Game;
 using Assets.Scripts.Context;
 using Joint = Assets.Scripts.Model.Data.Joint;
 using System.Threading;
+using Assets.Scripts.Resolver;
 using Assets.Scripts.Util;
+using Debug = UnityEngine.Debug;
 
 namespace Assets.Scripts.Loaders
 {
@@ -46,29 +49,38 @@ namespace Assets.Scripts.Loaders
 
         public void DoLoadParts()
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            Stopwatch incrementalWatch = Stopwatch.StartNew();
             // vanilla shapes/blocks:
-            Debug.Log($"Start Loading parts - Vanilla Game {DateTime.Now:O}");
             string basePath = PathResolver.ResolvePath("$game_data");
             LoadVanilla(basePath);
-            Debug.Log($"Start Loading parts - Vanilla Survival {DateTime.Now:O}");
+            Debug.Log($"Finished Loading parts - Vanilla Game in {incrementalWatch.ElapsedMilliseconds} ms");
+            incrementalWatch.Restart();
+
             basePath = PathResolver.ResolvePath("$survival_data");
             LoadVanilla(basePath);
-            Debug.Log($"Start Loading parts - Vanilla Challenge {DateTime.Now:O}");
+            Debug.Log($"Finished Loading parts - Vanilla Survival in {incrementalWatch.ElapsedMilliseconds} ms");
+            incrementalWatch.Restart();
+
             basePath = PathResolver.ResolvePath("$challenge_data");
             LoadVanilla(basePath);
+            Debug.Log($"Finished Loading parts - Vanilla Challenge in {incrementalWatch.ElapsedMilliseconds} ms");
+            incrementalWatch.Restart();
 
             // workshop mods:
-            Debug.Log($"Start Loading mods - Workshop {DateTime.Now:O}");
             string appdataModsPath = Path.Combine(PathResolver.WorkShopPath);
             LoadMods(appdataModsPath);
+            Debug.Log($"Finished Loading mods - Workshop in {incrementalWatch.ElapsedMilliseconds} ms");
+            incrementalWatch.Restart();
 
             // appdata mods:
-            Debug.Log($"Start Loading mods - Appdata {DateTime.Now:O}");
             string localModsPath = Path.Combine(PathResolver.ScrapMechanicAppdataUserPath, "Mods");
             LoadMods(localModsPath);
+            Debug.Log($"Finished Loading mods - Appdata in {incrementalWatch.ElapsedMilliseconds} ms");
 
-            Debug.Log($"Finished Loading parts - {DateTime.Now:O}");
-
+            Debug.Log($"Finished Loading parts in {stopwatch.ElapsedMilliseconds} ms");
+            incrementalWatch.Stop();
+            stopwatch.Stop();
         }
 
         IEnumerator PreLoadPartTextures() // needs to run threaded!!!!!

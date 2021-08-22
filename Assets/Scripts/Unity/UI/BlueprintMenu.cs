@@ -1,66 +1,153 @@
-﻿using Assets.Scripts.Context;
-using Assets.Scripts.Model;
+﻿using System;
+using System.Collections;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Assets.Scripts.Context;
+using Assets.Scripts.Loaders;
 using Assets.Scripts.Model.BlueprintObject;
 using Assets.Scripts.Model.Data;
 using Assets.Scripts.Model.Game;
 using Assets.Scripts.Model.Unity;
-using Assets.Scripts.Unity;
-using Newtonsoft.Json;
-using System;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using Assets.Scripts.Resolver;
+using TMPro;
 using UnityEngine;
+using Button = UnityEngine.UI.Button;
+using Debug = UnityEngine.Debug;
 using Joint = Assets.Scripts.Model.Data.Joint;
 
-namespace Assets.Scripts.Loaders
+namespace Assets.Scripts.Unity.UI
 {
-    class BlueprintLoader : MonoBehaviour
+    public class BlueprintMenu : ThreadedMonoBehaviour
     {
-        public Transform contentPanel;
-        public SimpleObjectPool buttonObjectPool;
+        [SerializeField] private Transform contentPanel;
+        [SerializeField] private SimpleObjectPool buttonObjectPool;
+        [SerializeField] private TMP_InputField titleField;
+        [SerializeField] private TMP_InputField descriptionField;
+        [SerializeField] private Button applyButton;
 
         public static BlueprintButton SelectedBlueprintButton;
         public static BlueprintScript blueprintObject;
+        
 
-        public Camera Camera;
-
-        public static readonly ConcurrentBag<string> KnownBlueprintPaths = new ConcurrentBag<string>();
-        public static readonly BlockingCollection<BlueprintContext> LoadedBlueprints = new BlockingCollection<BlueprintContext>();
-
-        private static readonly Dictionary<string, Coroutine> loadBlueprintsCoroutine = new Dictionary<string, Coroutine>();
+        public static readonly Dictionary<string, BlueprintContext> LoadedBlueprints = new Dictionary<string, BlueprintContext>();
 
         private void Start()
         {
-            StartLoadBlueprints();
-            DoAutoRefreshBlueprints();
-            //StartCoroutine(nameof(DelayedLoadTextures));
-        }
-
-        private void StartLoadBlueprints()
-        {
             string[] paths = new string[] { Path.Combine(PathResolver.ScrapMechanicAppdataUserPath, "Blueprints"), PathResolver.WorkShopPath };
-
             foreach (string path in paths)
             {
-                if (loadBlueprintsCoroutine.ContainsKey(path))
-                    StopCoroutine(loadBlueprintsCoroutine[path]);
+                _ = LoadBlueprints(path);
+            }
+            
+            // UI button events:
+            titleField.onValueChanged.AddListener(_ => applyButton.gameObject.SetActive(true));
+            descriptionField.onValueChanged.AddListener(_ => applyButton.gameObject.SetActive(true));
 
-                loadBlueprintsCoroutine.Add(path, StartCoroutine(nameof(LoadBlueprints), path));
+            applyButton.onClick.AddListener(() =>
+            {
+                BlueprintContext blueprintContextReference = SelectedBlueprintButton.BlueprintContextReference;
+                DescriptionData descriptionData = blueprintContextReference.Description;
+                try
+                {
+                    descriptionData.Name = titleField.text;
+                    descriptionData.Description = descriptionField.text;
+                    blueprintContextReference.SaveDescription();
+
+                    BlueprintButton[] blueprintbuttons = Resources.FindObjectsOfTypeAll<Model.Unity.BlueprintButton>();
+                    blueprintbuttons.First(button => button.BlueprintContextReference == blueprintContextReference).Initialize();
+
+                    applyButton.gameObject.SetActive(false);
+                    GameController.Instance.messageController.WarningMessage(
+                        "Title and description changes have been saved.");
+                }
+                catch (Exception e)
+                {
+                    GameController.Instance.messageController.OkMessage(
+                        $"Could not save {blueprintContextReference.BlueprintFolderPath}/description.json\n{e.Message}");
+                }
+            });
+
+            // file watcher:
+            foreach (string path in paths)
+            {
+                using var watcher = new FileSystemWatcher(path);
+                watcher.NotifyFilter = NotifyFilters.Size;
+                watcher.IncludeSubdirectories = true;
+                watcher.EnableRaisingEvents = true;
+
+                watcher.Changed += OnChanged;
             }
         }
-
-        private void DoAutoRefreshBlueprints()
+        
+        private void OnChanged(object sender, FileSystemEventArgs e)// different thread
         {
-            StartCoroutine(nameof(AutoRefreshBlueprints));
-        }
+            try
+            {
+                string path = e.FullPath;
+                bool exists = Directory.Exists(path) || File.Exists(path);
 
-        IEnumerator LoadBlueprints(string blueprintDirectory)
+                if (exists)
+                {
+                    FileAttributes fileAttributes = File.GetAttributes(path);
+                    if ((fileAttributes & FileAttributes.Directory) != FileAttributes.Directory)
+                        path = Directory.GetParent(path)?.FullName;
+                    if (LoadedBlueprints.TryGetValue(path, out var blueprintCtx))
+                    {
+                        _ = RunMain(() =>
+                        {
+                            blueprintCtx.LoadDescription();
+                            blueprintCtx.LoadIcon();
+                            blueprintCtx.btn.Initialize();
+                            if (SelectedBlueprintButton == blueprintCtx.btn)
+                                SelectBlueprintButton(SelectedBlueprintButton);
+                        });
+                    }
+                    else if (File.Exists($"{path}/blueprint.json"))
+                    {
+                        _ = RunMain(() =>
+                        {
+                            BlueprintContext bp = BlueprintContext.FromFolderPath(path);
+                            LoadedBlueprints.Add(path, bp);
+
+                            GameObject newButton = buttonObjectPool.GetObject();
+                            newButton.transform.SetParent(contentPanel);
+                            BlueprintButton blueprintButton = newButton.GetComponent<BlueprintButton>();
+                            blueprintButton.Setup(bp);
+                        });
+                    }
+                }
+                else
+                {
+                    if (path.Contains('.')) // assume it's a file
+                        path = path.Substring(0, path.LastIndexOf(Path.DirectorySeparatorChar));
+                    if (LoadedBlueprints.TryGetValue(path, out var blueprintCtx))
+                    {
+                        _ = RunMain(() =>
+                        {
+                            if (SelectedBlueprintButton == blueprintCtx.btn)
+                            {
+                                titleField.text = string.Empty;
+                                descriptionField.text = string.Empty;
+                                applyButton.gameObject.SetActive(false);
+                            }
+                            Destroy(blueprintCtx.btn.gameObject);
+                            LoadedBlueprints.Remove(path);
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+        
+
+        private async Task LoadBlueprints(string blueprintDirectory)
         {
             if (string.IsNullOrWhiteSpace(blueprintDirectory))
             {
@@ -68,53 +155,96 @@ namespace Assets.Scripts.Loaders
             }
             var knownWriteDateTime = DateTime.MinValue;
 
+            int exceptions = 0;
             while (true)
-            {
-                var lastWriteDateTime = Directory.GetLastWriteTime(blueprintDirectory);
-
-                if (knownWriteDateTime < lastWriteDateTime)
-                {
-                    Debug.Log($"start loading bps {DateTime.Now:O}");
-                    foreach (string bpDir in Directory.GetDirectories(blueprintDirectory))
-                    {
-                        if (!KnownBlueprintPaths.Contains(bpDir) && Directory.Exists(bpDir) && File.Exists($"{bpDir}/blueprint.json"))
-                        {
-                            BlueprintContext bp = BlueprintContext.FromFolderPath(bpDir);
-                            LoadedBlueprints.Add(bp);
-                            KnownBlueprintPaths.Add(bpDir);
-
-                            GameObject newButton = buttonObjectPool.GetObject();
-                            newButton.transform.SetParent(contentPanel);
-                            BlueprintButton blueprintButton = newButton.GetComponent<BlueprintButton>();
-                            blueprintButton.Setup(bp);
-                        }
-                    }
-                    Debug.Log($"blueprints loaded {DateTime.Now:O}");
-                    knownWriteDateTime = lastWriteDateTime;
-                }
-                yield return new WaitForSeconds(2f); // check for new blueprint every 2 sec
-            }
-        }
-
-        IEnumerator AutoRefreshBlueprints()
-        {
-            while(true)
             {
                 try
                 {
-                    foreach (var bp in LoadedBlueprints)
+                    var lastWriteDateTime = Directory.GetLastWriteTime(blueprintDirectory);
+
+                    if (knownWriteDateTime < lastWriteDateTime)
                     {
-                        bp.Refresh();
+                        knownWriteDateTime = lastWriteDateTime;
+
+                        foreach (string bpDir in Directory.GetDirectories(blueprintDirectory))
+                        {
+                            if (!LoadedBlueprints.ContainsKey(bpDir) && Directory.Exists(bpDir) &&
+                                File.Exists($"{bpDir}/blueprint.json"))
+                            {
+                                BlueprintContext bp = BlueprintContext.FromFolderPath(bpDir);
+                                LoadedBlueprints.Add(bpDir, bp);
+
+                                GameObject newButton = buttonObjectPool.GetObject();
+                                newButton.transform.SetParent(contentPanel);
+                                BlueprintButton blueprintButton = newButton.GetComponent<BlueprintButton>();
+                                blueprintButton.Setup(bp);
+                            }
+                        }
                     }
                 }
                 catch(Exception e)
                 {
-                    Debug.LogException(new Exception($"\nError while refreshing blueprints", e));
+                    if (exceptions++ < 10)
+                        Debug.LogException(e);
                 }
-                yield return new WaitForSeconds(10f);
+                finally
+                {
+                    await Task.Delay(2000);
+                }
             }
         }
 
+
+        
+
+
+        public void SelectBlueprintButton(BlueprintButton blueprintButton)
+        { 
+            Color color;
+            if (SelectedBlueprintButton != null)
+            {
+                color = SelectedBlueprintButton.button.image.color;
+                color.a = 40f / 255f;
+                SelectedBlueprintButton.button.image.color = color;
+            }
+            SelectedBlueprintButton = blueprintButton;
+
+            color = blueprintButton.button.image.color;
+            color.a = 100f / 255f;
+            blueprintButton.button.image.color = color;
+            DescriptionData descriptionData = blueprintButton.BlueprintContextReference.Description;
+
+            titleField.SetTextWithoutNotify(descriptionData.Name);
+            descriptionField.SetTextWithoutNotify(descriptionData.Description);
+            applyButton.gameObject.SetActive(false);
+        }
+
+        public void OpenBlueprintFilePath()
+        {
+            if (SelectedBlueprintButton?.BlueprintContextReference?.BlueprintFolderPath == null)
+            {
+                GameController.Instance.messageController.WarningMessage($"Please select a blueprint before clicking 'open blueprint folder'");
+                return;
+            }
+
+            Process.Start(SelectedBlueprintButton.BlueprintContextReference.BlueprintFolderPath);
+        }
+        public void OpenBlueprintSteam()
+        {
+            if (SelectedBlueprintButton?.BlueprintContextReference?.BlueprintFolderPath == null)
+            {
+                GameController.Instance.messageController.WarningMessage($"Please select a blueprint before clicking 'open steam page'");
+                return;
+            }
+
+            long id = SelectedBlueprintButton.BlueprintContextReference.Description.FileId;
+            if (id == 0)
+            {
+                GameController.Instance.messageController.WarningMessage($"Current selected blueprint doesn't have a steam page.");
+                return;
+            }
+            System.Diagnostics.Process.Start("steam://openurl/https://steamcommunity.com/sharedfiles/filedetails/?id="+id);
+        }
         /// <summary>
         /// click event that should trigger when clicking the 'load' button
         /// </summary>
@@ -123,10 +253,10 @@ namespace Assets.Scripts.Loaders
             GameObject rootGameObject = null;
             try
             {
-                if (BlueprintLoader.blueprintObject != null)
+                if (BlueprintMenu.blueprintObject != null)
                 {
                     //clean up existing blueprintobject
-                    Destroy(BlueprintLoader.blueprintObject.gameObject);
+                    Destroy(BlueprintMenu.blueprintObject.gameObject);
                 }
 
                 Debug.Log("trying to load bp");
@@ -166,11 +296,12 @@ namespace Assets.Scripts.Loaders
                 ArrangeJointReferencesUsingData(blueprintScript, blueprintData);
 
                 #region handle camera position
-                PlayerController playerController = Camera.GetComponent<PlayerController>();
+                PlayerController playerController = GameController.Instance.playerController;
                 if (playerController.snapToCreation)
                 {
+                    Camera camera = playerController.gameObject.GetComponent<Camera>();
                     var center = blueprintScript.CalculateCenter();
-                    var destination = center - Camera.transform.forward * playerController.distanceToSnap;
+                    var destination = center - camera.transform.forward * playerController.distanceToSnap;
 
                     var cameraState = playerController.m_TargetCameraState;
 
@@ -181,7 +312,7 @@ namespace Assets.Scripts.Loaders
                 }
                 #endregion
 
-                BlueprintLoader.blueprintObject = blueprintScript;
+                BlueprintMenu.blueprintObject = blueprintScript;
                 Debug.Log("successfully loaded bp");
             }
             catch (Exception e)
@@ -201,7 +332,7 @@ namespace Assets.Scripts.Loaders
         public void SaveBlueprint()
         {
             MessageController messageController = GameController.Instance.messageController;
-            if (BlueprintLoader.blueprintObject == null)
+            if (BlueprintMenu.blueprintObject == null)
             {
                 messageController.WarningMessage("Cannot save a creation that doesn't exist.\nLoad one first.",3);
                 return;
@@ -213,8 +344,8 @@ namespace Assets.Scripts.Loaders
                 {
                     try
                     {
-                        SelectedBlueprintButton.BlueprintContextReference.Blueprint = BlueprintLoader.blueprintObject.ToBlueprintData();
-                        SelectedBlueprintButton.BlueprintContextReference.Save();
+                        SelectedBlueprintButton.BlueprintContextReference.Blueprint = BlueprintMenu.blueprintObject.ToBlueprintData();
+                        SelectedBlueprintButton.BlueprintContextReference.SaveBlueprint();
                         messageController.WarningMessage("Creation successfully saved!");
                     }
                     catch(Exception e)
@@ -237,11 +368,15 @@ namespace Assets.Scripts.Loaders
             try
             {
                 MessageController messageController = GameController.Instance.messageController;
-                messageController.WarningMessage("This functionality is not yet available.");
+                GameObject.Destroy(SelectedBlueprintButton.gameObject);
+                LoadedBlueprints.Remove(SelectedBlueprintButton.BlueprintContextReference.BlueprintFolderPath);
+                SelectedBlueprintButton.BlueprintContextReference.Delete();
+
+                messageController.WarningMessage("Blueprint has been deleted.", 2f);
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.LogException(e);
             }
         }
 
@@ -306,9 +441,6 @@ namespace Assets.Scripts.Loaders
         /// <param name="blueprintData"></param>
         private void ArrangeJointReferencesUsingData(BlueprintScript blueprintScript, BlueprintData blueprintData)
         {
-            Debug.Log($"Arranging child-joint connection references");
-            var dtstart = DateTime.Now;
-
             // child -> joint is a bit of a pain because scriptchild knows nothing of joints[]
             int childIndex = 0;
             IEnumerable<Child> flatDataChildList = blueprintData.Bodies.SelectMany(body => body.Childs).Select(child => child);
@@ -393,7 +525,7 @@ namespace Assets.Scripts.Loaders
                     if (jointScript.childB == null)
                     {
                         // this is allowed. a joint doesn't have to have a childB
-                        // todo: attempt fix: find child(s) that is connected to this jointscript, 1 child: childA, 2 childs: check childB || error
+                        // todo: attempt fix: find child(s) that is connected to this jointscript, 1 child: childA, 2 childs: check childB || ok
                     }
                     else
                     {
@@ -416,10 +548,7 @@ namespace Assets.Scripts.Loaders
             }
 
             // todo: to be complete there should be another verify run on all childs to check if connected joints actually reference them back.
-
-
-            var dt = DateTime.Now - dtstart;
-            Debug.Log($"arrangejoints took {dt.TotalMilliseconds} ms");
+            
         }
 
     }

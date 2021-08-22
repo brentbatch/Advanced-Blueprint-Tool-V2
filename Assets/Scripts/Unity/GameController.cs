@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Assets.Scripts.Unity.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -26,6 +27,7 @@ namespace Assets.Scripts.Unity
 
         // unity player input system : https://github.com/Unity-Technologies/InputSystem/blob/develop/Packages/com.unity.inputsystem/InputSystem/Plugins/PlayerInput/PlayerInput.cs
         public PlayerInput playerInput;
+        public BlueprintMenu blueprintMenu;
         public EscapeMenu escapeMenu;
 
         public TMP_Text hotbarTitleText;

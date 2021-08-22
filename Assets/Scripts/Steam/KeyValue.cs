@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace SLMFramework
+namespace Assets.Scripts.Steam
 {
     internal class KVTextReader : StreamReader
     {

@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using Assets.Scripts.Loaders;
+using Assets.Scripts.Unity.UI;
 
 namespace Assets.Scripts.Tool
 {
@@ -53,13 +54,15 @@ namespace Assets.Scripts.Tool
             blueprintLoadCanvas = GameObject.Find("BlueprintLoadCanvas").GetComponent<Canvas>();
             blueprintLoadCanvas.enabled = false;
 
-            GameObject menu = blueprintLoadCanvas.gameObject.transform.Find("Menu").gameObject;
-            GameObject actionPanel = menu.transform.Find("ActionPanel").gameObject;
+            var menu = blueprintLoadCanvas.gameObject.transform.Find("Menu");
+            var actionPanel = menu.Find("ActionPanel");
+            var top = actionPanel.Find("Top");
+            var actions = actionPanel.Find("Actions");
 
-            Button exitBtn = menu.transform.Find("Exit").GetComponent<Button>();
+            Button exitBtn = top.Find("Exit").GetComponent<Button>();
             exitBtn.onClick.AddListener(() => CloseLoadBlueprintMenu());
 
-            Button loadBtn = actionPanel.transform.Find("Load").GetComponent<Button>();
+            Button loadBtn = actions.Find("Load").GetComponent<Button>();
             loadBtn.onClick.AddListener(() => CloseLoadBlueprintMenu());
         }
 
@@ -142,10 +145,10 @@ namespace Assets.Scripts.Tool
         private void ClearScene(bool state)
         {
             if (!state) return;
-            if (BlueprintLoader.blueprintObject != null)
+            if (BlueprintMenu.blueprintObject != null)
             {
-                GameObject.Destroy(BlueprintLoader.blueprintObject?.gameObject);
-                BlueprintLoader.blueprintObject = null;
+                GameObject.Destroy(BlueprintMenu.blueprintObject?.gameObject);
+                BlueprintMenu.blueprintObject = null;
             }
         }
 
