@@ -9,8 +9,6 @@ using UnityEngine;
 
 namespace Assets.Scripts.CustomGizmos
 {
-    // todo: put all raycast stuff from SelectionFilter in this gizmo.
-
     public class SelectionGizmo : MonoBehaviour
     {
         public static SelectionGizmo Instance { get; private set; }
