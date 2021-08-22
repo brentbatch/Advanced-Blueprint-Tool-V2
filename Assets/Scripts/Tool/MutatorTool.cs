@@ -131,8 +131,11 @@ namespace Assets.Scripts.Tool
 
         private void MoveSelectionByArrows(Vector3 vector3)
         {
-            Vector3 direction = PlayerController.gameObject.transform.TransformDirection(vector3) * 1.4f;
-            Vector3Int offset = Vector3Int.RoundToInt(direction);
+            Vector3 angles = PlayerController.gameObject.transform.eulerAngles;
+            var rotation90 = Mathf.RoundToInt(angles.y / 90f) * 90;
+            vector3 = vector3.Rotate(0, rotation90, 0);
+            
+            Vector3Int offset = Vector3Int.RoundToInt(vector3);
 
             MoveObjects(offset);
             moveGizmo.SetPosition(selectionGizmo.selectionFilter.GetCenter());
