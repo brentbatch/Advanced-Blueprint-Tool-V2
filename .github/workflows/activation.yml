@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-	  
+      
       # Request manual activation file
       - name: Request manual activation file
         id: getManualLicenseFile
