@@ -88,13 +88,13 @@ namespace Assets.Scripts.Unity
             
             inputActions.Game.Camera.performed += ctx => { if (ctx.ReadValueAsButton()) OnCursorToggle(); };
             inputActions.Game.Escape.performed += ctx => { 
-                if (toolController.selectedTool?.OnEsc(ctx.ReadValueAsButton()) != false && ctx.ReadValueAsButton())
+                if (toolController.selectedTool?.OnEsc(ctx.ReadValueAsButton()) == true && ctx.ReadValueAsButton())
                 {
                     escapeMenu.Toggle();
                 }
             };
             inputActions.UI.Escape.performed += ctx => {
-                if (toolController.selectedTool?.OnEsc(ctx.ReadValueAsButton()) != false && ctx.ReadValueAsButton())
+                if (toolController.selectedTool?.OnEsc(ctx.ReadValueAsButton()) == true && ctx.ReadValueAsButton())
                 {
                     escapeMenu.Toggle();
                 }
@@ -103,7 +103,7 @@ namespace Assets.Scripts.Unity
             Button focusBtn = GameObject.Find("PullFocusButton").GetComponent<Button>();
             focusBtn.onClick.AddListener(() =>
             {
-                if (toolController.selectedTool?.OnFocus() != false)
+                if (toolController.selectedTool?.OnFocus() == true)
                 {
                     SetCursorState(false);
                 }

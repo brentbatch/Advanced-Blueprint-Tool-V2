@@ -101,20 +101,20 @@ namespace Assets.Scripts.Unity
         Color color;
         public void OpenColorPicker()
         {
-            ColorPicker.Create(this.color, "colortool", OnColorChanged, OnColorSelected);
+            //ColorPicker.Create(this.color, "colortool", OnColorChanged, OnColorSelected);
             MessageController messageController = GameController.Instance.messageController;
-            messageController.WarningMessage("Colorpicker not yet implemented.");
+            messageController.WarningMessage("Use the MutatorTool Color function.\nBehaviour of this button to be decided.");
         }
 
         private void OnColorSelected(Color c)
         {
-            Debug.Log(c);
+            Debug.Log("selected:"+c);
         }
 
         private void OnColorChanged(Color c)
         {
             this.color = c;
-            Debug.Log(c);
+            Debug.Log("changed:"+c);
         }
 
         void Update()
