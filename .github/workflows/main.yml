@@ -1,7 +1,7 @@
 name: Build Advanced Blueprint Tools V2 - Unity project 🎮
 
 on: 
-  # Triggers the workflow on push or pull request events but only for the main branch
+  # Triggers the workflow on push or pull request events
   push:
     branches: [ main ]
   pull_request:
@@ -21,14 +21,12 @@ env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 
 jobs:
-  buildAndTestForSomePlatforms:
+  buildAndTestForSupportedPlatforms:
     name: Build for ${{ matrix.targetPlatform }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        projectPath:
-          - build
         unityVersion:
           - 2020.3.14f1
         targetPlatform:
@@ -45,11 +43,10 @@ jobs:
       # Cache
       - uses: actions/cache@v2
         with:
-          path: ${{ matrix.projectPath }}/Library
-          key: Library-${{ matrix.projectPath }}-${{ matrix.targetPlatform }}-${{ hashFiles(matrix.projectPath) }}
+          path: Library
+          key: Library--${{ matrix.targetPlatform }}
           restore-keys: |
-            Library-${{ matrix.projectPath }}-${{ matrix.targetPlatform }}-
-            Library-${{ matrix.projectPath }}-
+            Library-${{ matrix.targetPlatform }}-
             Library-
       
       # Test
@@ -59,7 +56,6 @@ jobs:
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
-          projectPath: ${{ matrix.projectPath }}
           unityVersion: ${{ matrix.unityVersion }}
           githubToken: ${{ secrets.GITHUB_TOKEN }}
       
@@ -75,7 +71,6 @@ jobs:
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
-          projectPath: ${{ matrix.projectPath }}
           unityVersion: ${{ matrix.unityVersion }}
           targetPlatform: ${{ matrix.targetPlatform }}
           # customParameters: '-myParameter myValue -myBoolean -ThirdParameter andItsValue'
@@ -83,5 +78,5 @@ jobs:
       # Output
       - uses: actions/upload-artifact@v2
         with:
-          name: Build
-          path: build
+          name: Build-${{ matrix.targetPlatform }}
+          path: build/${{ matrix.targetPlatform }}
