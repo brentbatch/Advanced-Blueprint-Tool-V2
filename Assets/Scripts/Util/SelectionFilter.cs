@@ -43,7 +43,7 @@ namespace Assets.Scripts.Util
                 min = Vector3Int.RoundToInt(selectedObjectBounds.min);
                 max = Vector3Int.RoundToInt(selectedObjectBounds.max);
             }
-            else if (raycastHit.transform.gameObject != selectedObject) // make 'shift' use rayhit.point
+            else if (raycastHit.transform.gameObject != selectedObject)
             {
                 // extend
                 IsMultiSelection = true;

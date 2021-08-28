@@ -51,13 +51,16 @@ namespace Assets.Scripts.Tool
                     OnEquip = EquipMoveFunction, OnUnEquip = UnEquipMoveFunction, OnLeftClick = SelectionMoveLMB, OnRightClick = SelectionMoveRMB, OnMove2 = MoveSelectionByArrows },
                 new ToolFunction { title = "rotate shapes", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ),
                     OnEquip = EquipRotateFunction, OnUnEquip = UnEquipRotateFunction, OnLeftClick = SelectionRotateLMB, OnRightClick = SelectionRotateRMB, OnNextRotation = ToggleGridMode},
-                new ToolFunction { title = "scale blocks", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ) ,OnEquip = () => {
+                /*new ToolFunction { title = "scale blocks", description = "", sprite = Resources.Load<Sprite>( "Textures/mutate" ) ,OnEquip = () => {
                     messageController.WarningMessage("Feature not yet implemented."); 
-                }},
+                }},//*/
+                new ToolFunction { title = "color blocks", description = "", sprite = Resources.Load<Sprite>( "Textures/colorWheel" ),
+                    OnEquip = EquipColorFunction, OnUnEquip = UnEquipColorFunction, OnLeftClick = SelectionColorLMB, OnRightClick = SelectionColorRMB, OnInteract = _ => OpenColorMenu(), OnFocus = CloseColorGui, OnEsc = _ => CloseColorGui()},
             };
             selectedToolFunction = functions[0];
 
         }
+
 
         public override void OnStart()
         {
@@ -73,6 +76,7 @@ namespace Assets.Scripts.Tool
             rotateGizmo.SetActive(false);
             base.OnUnEquip();
         }
+        
 
         // // don't do anything on clicking the function in the hotbar:
         // public override void OnHotBarFunctionClick() {}
@@ -93,6 +97,15 @@ namespace Assets.Scripts.Tool
             foreach (GameObject gameObject in gameObjects)
             {
                 gameObject.transform.position += offset;
+            }
+        }
+        
+        private void OpenFilterMenu(bool keyDown)
+        {
+            if (selectionGizmo.HasSelection())
+            {
+
+                GameController.Instance.messageController.WarningMessage("Feature not yet implemented.");
             }
         }
 
@@ -117,7 +130,7 @@ namespace Assets.Scripts.Tool
         private void SelectionMoveLMB(bool keyDown)
         {
             if (selectionGizmo.IsSelecting || selectionGizmo.IsScaling || !moveGizmo.Move(keyDown))
-                selectionGizmo.Selection(keyDown);
+                selectionGizmo.Selection(keyDown, PlayerController.isSprinting);
         }
         private void SelectionMoveRMB(bool keyDown)
         {
@@ -151,7 +164,7 @@ namespace Assets.Scripts.Tool
 
         private void RotateSelected(SelectionFilter selectionFilter)
         {
-            Vector3Int position = Vector3Int.FloorToInt(selectionGizmo.selectionFilter.GetCenter());
+            Vector3 position = Vector3Int.FloorToInt(selectionGizmo.selectionFilter.GetCenter()) + Vector3.one / 2f;
             moveGizmo.SetPosition(position);
             rotateGizmo.SetPosition(position);
             moveGizmo.SetActive(true, MoveCenterRotationPoint);
@@ -165,6 +178,7 @@ namespace Assets.Scripts.Tool
 
 
         private Vector3Int lastRotation = Vector3Int.zero;
+
         private void RotateObject(Vector3Int rotation)
         {
             var pivot = moveGizmo.transform.position;
@@ -190,7 +204,7 @@ namespace Assets.Scripts.Tool
 
 
 
-        private void EquipRotateFunction() // movegizmo needs to be able to go in intervals of 0.5- ish - some button to switch between the 2 (add 0.50.50.5)
+        private void EquipRotateFunction()
         {
             selectionGizmo.SetActive(true, RotateSelected);
             bool hasSelection = selectionGizmo.HasSelection();
@@ -198,7 +212,7 @@ namespace Assets.Scripts.Tool
             rotateGizmo.SetActive(hasSelection, RotateObject);
             if (hasSelection)
             {
-                Vector3Int position = Vector3Int.FloorToInt(selectionGizmo.selectionFilter.GetCenter());
+                Vector3 position = Vector3Int.FloorToInt(selectionGizmo.selectionFilter.GetCenter()) + Vector3.one/2f;
                 moveGizmo.SetPosition(position);
                 rotateGizmo.SetPosition(position);
             }
@@ -241,7 +255,7 @@ namespace Assets.Scripts.Tool
                 return;
             }
 
-            selectionGizmo.Selection(keyDown); // change selection
+            selectionGizmo.Selection(keyDown, PlayerController.isSprinting); // change selection
         }
 
         private void SelectionRotateRMB(bool keyDown)
@@ -267,6 +281,75 @@ namespace Assets.Scripts.Tool
                 moveGizmo.SetPosition(position);
                 rotateGizmo.SetPosition(position);
             }
+        }
+
+
+
+        private void EquipColorFunction()
+        {
+            selectionGizmo.SetActive(true, filter =>
+            {
+                if (!selectionGizmo.IsScaling && !selectionGizmo.IsSelecting)
+                    OpenColorMenu();
+            });
+            if (selectionGizmo.HasSelection())
+                OpenColorMenu();
+        }
+
+        private Color fillColor = Color.black;
+        private void OpenColorMenu()
+        {
+            SelectionFilter selectionFilter = selectionGizmo.selectionFilter;
+
+            GameController.CursorFocusUI(true);
+            if (!selectionFilter.IsMultiSelection)
+            {
+                fillColor = selectionFilter.GetSelectedGameObjects()[0].GetComponent<ChildScript>().GetColor();
+            }
+            ColorPicker.Create(this.fillColor, "colortool", 
+                selectedColor =>
+                {
+                    if (!selectionFilter.IsMultiSelection)
+                        selectionFilter.GetSelectedGameObjects()[0].GetComponent<ChildScript>().SetColor(selectedColor);
+                }, 
+                selectedColor =>
+                {
+                    if (fillColor == selectedColor) return;
+                    fillColor = selectedColor;
+                    foreach (GameObject selectedGameObject in selectionFilter.GetSelectedGameObjects())
+                    {
+                        if (selectedGameObject.TryGetComponent<ChildScript>(out var component))
+                        {
+                            component.SetColor(selectedColor);
+                        }
+                    }
+                    GameController.CursorFocusUI(false);
+                });
+        }
+
+        private void UnEquipColorFunction()
+        {
+            moveGizmo.SetActive(false);
+            // hide ui
+        }
+
+        private void SelectionColorLMB(bool keyDown)
+        {
+            selectionGizmo.Selection(keyDown, PlayerController.isSprinting);
+        }
+
+        private void SelectionColorRMB(bool keyDown)
+        {
+            if (!selectionGizmo.Selection(false))
+            {
+                selectionGizmo.CancelSelection();
+            }
+        }
+
+        private bool CloseColorGui() // on focus
+        {
+            ColorPicker.Cancel();
+            return true;
         }
 
     }

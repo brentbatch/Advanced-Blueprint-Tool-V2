@@ -76,7 +76,7 @@ namespace Assets.Scripts.Model.BlueprintObject
             {
                 ChildA = childScripts.IndexOf(this.childA),
                 ChildB = this.childB == null ? -1 : childScripts.IndexOf(this.childB),
-                Color = this.GetColor(),
+                Color = this.GetColorStr(),
                 Controller = this.Controller,
                 Id = this.Id,
                 ShapeId = partData.Uuid,
