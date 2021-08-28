@@ -42,7 +42,7 @@ namespace Assets.Scripts.Tool
             sprite = Resources.Load<Sprite>("Textures/lift");
             functions = new List<ToolFunction>()
             {
-                new ToolFunction { title = "load/save", description = "load/save blueprint", OnInteract = ToggleLoadBlueprintMenu, sprite = Resources.Load<Sprite>( "Textures/blueprint_download" )},
+                new ToolFunction { title = "load/save", description = "load/save blueprint", OnInteract = ToggleLoadBlueprintMenu, OnLeftClick = ToggleLoadBlueprintMenu, sprite = Resources.Load<Sprite>( "Textures/blueprint_download" )},
                 //new ToolFunction { title = "save", description = "save blueprint", OnInteract = ToggleSaveCreationMenu, sprite = Resources.Load<Sprite>( "Textures/blueprint_upload" )},
                 //new ToolFunction { title = "info", description = "save blueprint", OnInteract = ToggleSaveCreationMenu, sprite = Resources.Load<Sprite>( "Textures/blueprint_upload" )}, // part count, mods?, center, (wires), new image ...
                 new ToolFunction { title = "clear", description = "clear scene", OnInteract = ClearScene, sprite = Resources.Load<Sprite>( "Textures/clear" )},
