@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Assets.Scripts.Resolver;
+using UnityEngine;
 
 namespace Assets.Scripts.Model.Data
 {
@@ -32,7 +34,7 @@ namespace Assets.Scripts.Model.Data
         
         public Renderable Renderable { get; set; }
 
-        public void LoadRenderable(string modFolderPath)
+        public void LoadRenderableData(string modFolderPath)
         {
             if (RenderableObject is string renderablePath)
             {
@@ -180,7 +182,8 @@ namespace Assets.Scripts.Model.Data
     public class Cylinder
     {
         [JsonProperty("diameter")]
-        public int Diameter { get; set; }
+        public object DiameterObject { get; set; }
+        public int Diameter { get => DiameterObject is int diameter ? diameter : Mathf.FloorToInt((float)Convert.ToDouble(DiameterObject)); }
 
         [JsonProperty("depth")]
         public int Depth { get; set; }

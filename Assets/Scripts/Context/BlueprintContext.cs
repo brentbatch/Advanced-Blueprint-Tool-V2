@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Assets.Scripts.Model.Unity;
 using UnityEngine;
 
 namespace Assets.Scripts.Context
@@ -19,9 +20,11 @@ namespace Assets.Scripts.Context
         public string BlueprintFolderPath { get; protected set; }
         public DateTime LastEditDateTime { get; protected set; }
 
+        public BlueprintButton btn;
+
         public static BlueprintContext FromBlueprintPath(string path)
         {
-            return FromFolderPath(Directory.GetParent(path).FullName);
+            return FromFolderPath(Directory.GetParent(path)?.FullName);
         }
 
         public static BlueprintContext FromFolderPath(string path)
@@ -42,7 +45,7 @@ namespace Assets.Scripts.Context
             return new BlueprintContext
             {
                 BlueprintFolderPath = path,
-                LastEditDateTime = Directory.GetLastWriteTime(path)
+                LastEditDateTime = Directory.GetLastAccessTime(path)
             };
         }
 
@@ -56,10 +59,30 @@ namespace Assets.Scripts.Context
             }
             catch (Exception e)
             {
+                GameObject.Destroy(btn.gameObject);
                 throw new Exception($"Could not load {this.BlueprintFolderPath}/blueprint.json", e);
             }
         }
 
+        /// <summary>
+        /// blueprint.json size in bytes.
+        /// </summary>
+        /// <returns></returns>
+        public long GetBlueprintSize()
+        {
+            try
+            {
+                return new System.IO.FileInfo($"{this.BlueprintFolderPath}/blueprint.json").Length;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// description.json
+        /// </summary>
         public void LoadDescription()
         {
             try
@@ -68,8 +91,14 @@ namespace Assets.Scripts.Context
             }
             catch (Exception e)
             {
-                // todo: this can be resolved! create (inmemory) new description
-                throw new Exception($"Could not load {this.BlueprintFolderPath}/description.json", e);
+                Debug.LogWarning($"Could not load {this.BlueprintFolderPath}/description.json, using generated description.\nError: {e}");
+                Description = new DescriptionData()
+                {
+                    Description = "",
+                    LocalId = Guid.NewGuid().ToString(),
+                    Name = "Unknown blueprint",
+                    Type = "Blueprint"
+                };
             }
         }
 
@@ -82,7 +111,7 @@ namespace Assets.Scripts.Context
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"Could not load icon, using plain texture.\nError: {e}");
+                Debug.LogWarning($"Could not load {this.BlueprintFolderPath}/icon.png, using plain texture.\nError: {e}");
             }
             finally
             {
@@ -90,35 +119,52 @@ namespace Assets.Scripts.Context
             }
         }
 
-        public void Refresh()
+        public async Task Refresh()
         {
-            var lastEditDateTime = Directory.GetLastWriteTime(this.BlueprintFolderPath);
+            DateTime lastEditDateTime = Directory.GetLastAccessTime(this.BlueprintFolderPath);
             if (lastEditDateTime > this.LastEditDateTime)
             {
                 this.LoadIcon();
                 this.LoadDescription();
+                BlueprintButton[] blueprintbuttons = Resources.FindObjectsOfTypeAll<Model.Unity.BlueprintButton>();
+                blueprintbuttons.First(button => button.BlueprintContextReference == this).Initialize();
             }
             this.LastEditDateTime = lastEditDateTime;
+            await Task.CompletedTask;
         }
 
-        public bool SaveAs()
+        public void SaveBlueprintAs()
         {
             //create new path to save at
-            return Save();
+            SaveBlueprint();
         }
 
-        public bool Save()
+        public void SaveBlueprint()
         {
-            // use bppath
-            // todo: serialize & save data
 
-            string blueprintString = JsonConvert.SerializeObject(this.Blueprint, Formatting.Indented, new JsonSerializerSettings
+            string blueprintString = JsonConvert.SerializeObject(this.Blueprint, new JsonSerializerSettings
             {
-                NullValueHandling = NullValueHandling.Ignore
+                NullValueHandling = NullValueHandling.Ignore,
+                Formatting = Formatting.None
             });
 
+            System.IO.File.WriteAllText($"{this.BlueprintFolderPath}/blueprint.json", blueprintString); //save blueprint
+        }
 
-            return true;
+        public void SaveDescription()
+        {
+            string descriptionString = JsonConvert.SerializeObject(this.Description, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Include,
+                Formatting = Formatting.Indented
+            });
+
+            System.IO.File.WriteAllText($"{this.BlueprintFolderPath}/description.json", descriptionString);
+        }
+
+        public void Delete()
+        {
+            Directory.Delete(BlueprintFolderPath, true);
         }
     }
 }

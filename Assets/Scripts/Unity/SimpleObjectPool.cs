@@ -3,54 +3,57 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class SimpleObjectPool : MonoBehaviour
+namespace Assets.Scripts.Unity
 {
-    public GameObject prefab;
-    private Stack<GameObject> inactiveInstances = new Stack<GameObject>();
-
-    public GameObject GetObject()
+    public class SimpleObjectPool : MonoBehaviour
     {
-        GameObject spawnedGameObject;
+        public GameObject prefab;
+        private Stack<GameObject> inactiveInstances = new Stack<GameObject>();
 
-        if (inactiveInstances.Count > 0)
+        public GameObject GetObject()
         {
-            spawnedGameObject = inactiveInstances.Pop();
+            GameObject spawnedGameObject;
+
+            if (inactiveInstances.Count > 0)
+            {
+                spawnedGameObject = inactiveInstances.Pop();
+            }
+            else
+            {
+                spawnedGameObject = (GameObject)GameObject.Instantiate(prefab);
+
+                PooledObject pooledObject = spawnedGameObject.AddComponent<PooledObject>();
+                pooledObject.pool = this;
+            }
+
+            spawnedGameObject.transform.SetParent(null);
+            spawnedGameObject.SetActive(true);
+
+            return spawnedGameObject;
         }
-        else
+
+        public void ReturnObject(GameObject toReturn)
         {
-            spawnedGameObject = (GameObject)GameObject.Instantiate(prefab);
+            PooledObject pooledObject = toReturn.GetComponent<PooledObject>();
 
-            PooledObject pooledObject = spawnedGameObject.AddComponent<PooledObject>();
-            pooledObject.pool = this;
+            if(pooledObject != null && pooledObject.pool == this)
+            {
+                toReturn.transform.SetParent(transform);
+                toReturn.SetActive(true);
+
+                inactiveInstances.Push(toReturn);
+            }
+            else
+            {
+                Debug.LogWarning(toReturn.name + " was returned to a pool it wasn't spawned from! Destroying.");
+                Destroy(toReturn);
+            }
         }
 
-        spawnedGameObject.transform.SetParent(null);
-        spawnedGameObject.SetActive(true);
-
-        return spawnedGameObject;
     }
 
-    public void ReturnObject(GameObject toReturn)
+    public class PooledObject : MonoBehaviour
     {
-        PooledObject pooledObject = toReturn.GetComponent<PooledObject>();
-
-        if(pooledObject != null && pooledObject.pool == this)
-        {
-            toReturn.transform.SetParent(transform);
-            toReturn.SetActive(true);
-
-            inactiveInstances.Push(toReturn);
-        }
-        else
-        {
-            Debug.LogWarning(toReturn.name + " was returned to a pool it wasn't spawned from! Destroying.");
-            Destroy(toReturn);
-        }
+        public SimpleObjectPool pool;
     }
-
-}
-
-public class PooledObject : MonoBehaviour
-{
-    public SimpleObjectPool pool;
 }

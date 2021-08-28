@@ -16,7 +16,7 @@ namespace Assets.Scripts.Model.Data
         public string Description { get; set; }
 
         [JsonProperty("fileId")]
-        public string FileId { get; set; }
+        public long FileId { get; set; }
 
         [JsonProperty("localId")]
         public string LocalId { get; set; }
@@ -28,7 +28,7 @@ namespace Assets.Scripts.Model.Data
         public string Type { get; set; }
 
         [JsonProperty("version")]
-        public string Version { get; set; }
+        public object Version { get; set; }
 
         public override string ToString()
         {
