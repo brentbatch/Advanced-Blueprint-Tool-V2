@@ -6,6 +6,8 @@ using Assets.Scripts.Model.Data;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Assets.Scripts.Unity;
+using Assets.Scripts.Unity.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -25,11 +27,10 @@ namespace Assets.Scripts.Model.Unity
 
         IEnumerator Start()
         {
+            yield return null; // do it next frame
             BlueprintContextReference.LoadDescription();
             BlueprintContextReference.LoadIcon();
-
             Initialize();
-            yield return null;
         }
 
         public void Initialize()
@@ -52,34 +53,24 @@ namespace Assets.Scripts.Model.Unity
         public void Setup(BlueprintContext blueprintContext)
         {
             BlueprintContextReference = blueprintContext;
+            blueprintContext.btn = this;
         }
 
         /// <summary>
         /// click event that should trigger when selecting a blueprint button
         /// </summary>
-        public void SelectBlueprint()
+        public void SelectBlueprint() // todo: make it so when creating button the blueprintmenu subscribes to a onSelectedBlueprintButton event
         {
-            Color color;
-            if (BlueprintLoader.SelectedBlueprintButton != null)
-            {
-                color = BlueprintLoader.SelectedBlueprintButton.button.image.color;
-                color.a = 40f/255f;
-                BlueprintLoader.SelectedBlueprintButton.button.image.color = color;
-            }
-            BlueprintLoader.SelectedBlueprintButton = this;
-
-            color = this.button.image.color;
-            color.a = 100f/255f;
-            this.button.image.color = color;
+            GameController.Instance.blueprintMenu.SelectBlueprintButton(this);
         }
 
         public void ApplySearchFilter(string text)
         {
             bool active = title.text.ToLower().Contains(text);
             gameObject.SetActive(active);
-            if (!active && BlueprintLoader.SelectedBlueprintButton == this)
+            if (!active && BlueprintMenu.SelectedBlueprintButton == this)
             {
-                BlueprintLoader.SelectedBlueprintButton = null;
+                BlueprintMenu.SelectedBlueprintButton = null;
 
                 Color color = this.button.image.color;
                 color.a = 40f / 255f;

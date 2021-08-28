@@ -22,6 +22,7 @@ namespace Assets.Scripts.Tool
         public ToolFunction selectedToolFunction;
         public int SelectedToolIndex { get; private set; }
 
+        protected Vector3 previousArrowsState;
         protected bool leftClickButtonState;
         protected bool rightClickButtonState;
         protected bool interactButtonState;
@@ -79,7 +80,6 @@ namespace Assets.Scripts.Tool
             ShowToolInfo();
             TitleText.enabled = true;
             DescriptionText.enabled = false;
-            selectedToolFunction?.OnEquip?.Invoke();
         }
         /// <summary>
         /// default implementation: toolfunction.onUnEquip
@@ -89,7 +89,6 @@ namespace Assets.Scripts.Tool
             ShowToolInfo();
             TitleText.enabled = true;
             DescriptionText.enabled = false;
-            selectedToolFunction?.OnUnEquip?.Invoke();
         }
         /// <summary>
         /// default implementation: toolfunction.onUpdate
@@ -155,6 +154,12 @@ namespace Assets.Scripts.Tool
             selectedToolFunction?.OnPreviousRotation?.Invoke(isKeyDown);
         }
 
+
+        public virtual void OnMove2(Vector3 vector3)
+        {
+            previousArrowsState = vector3;
+            selectedToolFunction?.OnMove2?.Invoke(vector3);
+        }
         public virtual void OnR(bool isKeyDown)
         {
             //if (HotbarController.IsToolBarSelected)

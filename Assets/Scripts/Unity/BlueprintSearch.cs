@@ -1,18 +1,19 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class BlueprintSearch : MonoBehaviour
+namespace Assets.Scripts.Unity
 {
-    public TMPro.TMP_InputField input;
-
-    public delegate void FilterText(string text);
-    public static event FilterText OnTextFilter;
-
-    public static string searchText = "";
-    public void OnTextChanged()
+    public class BlueprintSearch : MonoBehaviour
     {
-        OnTextFilter(input.text.ToLower());
-        searchText = input.text.ToLower();
+        public TMPro.TMP_InputField input;
+
+        public delegate void FilterText(string text);
+        public static event FilterText OnTextFilter;
+
+        public static string searchText = "";
+        public void OnTextChanged()
+        {
+            OnTextFilter(input.text.ToLower());
+            searchText = input.text.ToLower();
+        }
     }
 }

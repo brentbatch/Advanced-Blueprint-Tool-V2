@@ -9,8 +9,6 @@ using UnityEngine;
 
 namespace Assets.Scripts.CustomGizmos
 {
-    // todo: put all raycast stuff from SelectionFilter in this gizmo.
-
     public class SelectionGizmo : MonoBehaviour
     {
         public static SelectionGizmo Instance { get; private set; }
@@ -48,11 +46,17 @@ namespace Assets.Scripts.CustomGizmos
         private void Start()
         {
             PlayerController = GameController.Instance.playerController;
-            foreach (var renderer in new List<MeshRenderer> { Cube, XFace, XNegFace, YFace, YNegFace, ZFace, ZNegFace })
+            Cube.enabled = false;
+            HideFaces();
+            SetActive(false);
+        }
+
+        private void HideFaces()
+        {
+            foreach (var renderer in new List<MeshRenderer> { XFace, XNegFace, YFace, YNegFace, ZFace, ZNegFace })
             {
                 renderer.enabled = false;
             }
-            SetActive(false);
         }
 
         public void SetSelection(SelectionFilter selectionFilter) => this.selectionFilter = selectionFilter;
@@ -61,10 +65,10 @@ namespace Assets.Scripts.CustomGizmos
         {
             gameObject.SetActive(active);
             Cube.enabled = active;
+            OnSelect = onSelect ?? (vec => { });
 
             if (active)
             {
-                OnSelect = onSelect ?? (vec => { });
                 if (OnSelect == null) Debug.LogWarning("SelectionGizmo.SetActive 'OnSelect' parameter is null!");
             }
             else
@@ -77,12 +81,20 @@ namespace Assets.Scripts.CustomGizmos
         {
             IsScaling = false;
             IsSelecting = false;
-            selectionFilter = new SelectionFilter();
+            selectionFilter = default;
             gameObject.transform.position = Vector3.zero;
             gameObject.transform.localScale = Vector3.zero;
         }
 
-        public bool Selection(bool keyDown)
+        public bool HasSelection() => !selectionFilter.Equals(default(SelectionFilter));
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="keyDown"></param>
+        /// <param name="stretchModifier">do selection in plane(s) between 2 selected points</param>
+        /// <returns>Started/ended selection or scaling of selection</returns>
+        public bool Selection(bool keyDown, bool stretchModifier = false)
         {
             if (!gameObject.activeInHierarchy)
             {
@@ -114,8 +126,57 @@ namespace Assets.Scripts.CustomGizmos
 
             if (keyDown && Physics.Raycast(playerTransform.position, playerTransform.forward, out RaycastHit raycastHit, 500, ~gizmoLayerMask))
             {
-                IsSelecting = true;
-                selectionFilter = SelectionFilter.NewSelection(raycastHit);
+                if (stretchModifier && HasSelection())
+                {
+                    SelectionFilter newSelection = SelectionFilter.NewSelection(raycastHit);
+                    Vector3Int newMin = newSelection.min;
+                    Vector3Int newMax = newSelection.max;
+                    Vector3Int currentMin = selectionFilter.min;
+                    Vector3Int currentMax = selectionFilter.max;
+                    Vector3Int finalMin = currentMin;
+                    Vector3Int finalMax = currentMax;
+
+                    if (Math.Min(newMin.x, newMax.x) >= Math.Max(currentMin.x, currentMax.x) || Math.Max(newMin.x, newMax.x) <= Math.Min(currentMin.x, currentMax.x))
+                    {
+                        finalMin.x = -100000;
+                        finalMax.x = 100000;
+                    }
+                    if (Math.Min(newMin.y, newMax.y) >= Math.Max(currentMin.y, currentMax.y) || Math.Max(newMin.y, newMax.y) <= Math.Min(currentMin.y, currentMax.y))
+                    {
+                        finalMin.y = -100000;
+                        finalMax.y = 100000;
+                    }
+                    if (Math.Min(newMin.z, newMax.z) >= Math.Max(currentMin.z, currentMax.z) || Math.Max(newMin.z, newMax.z) <= Math.Min(currentMin.z, currentMax.z))
+                    {
+                        finalMin.z = -100000;
+                        finalMax.z = 100000;
+                    }
+                    var bigSelection = SelectionFilter.FromSelection(finalMin, finalMax, ~gizmoLayerMask);
+                    Collider[] colliders = Physics.OverlapBox(bigSelection.GetCenter(), (Vector3)bigSelection.GetSize() * 0.4999f, Quaternion.identity, ~gizmoLayerMask);
+                    if (finalMax.x == 100000)
+                    {
+                        finalMin.x = (int)colliders.Min(collider => collider.bounds.min.x);
+                        finalMax.x = (int)colliders.Max(collider => collider.bounds.max.x);
+                    }
+                    if (finalMax.y == 100000)
+                    {
+                        finalMin.y = (int)colliders.Min(collider => collider.bounds.min.y);
+                        finalMax.y = (int)colliders.Max(collider => collider.bounds.max.y);
+                    }
+                    if (finalMax.z == 100000)
+                    {
+                        finalMin.z = (int)colliders.Min(collider => collider.bounds.min.z);
+                        finalMax.z = (int)colliders.Max(collider => collider.bounds.max.z);
+                    }
+                    selectionFilter = SelectionFilter.FromSelection(finalMin, finalMax, ~gizmoLayerMask);
+                    OnSelect(selectionFilter);
+                    HideFaces();
+                }
+                else
+                {
+                    IsSelecting = true;
+                    selectionFilter = SelectionFilter.NewSelection(raycastHit);
+                }
                 return true;
             }
             return false;
@@ -162,7 +223,8 @@ namespace Assets.Scripts.CustomGizmos
 
         private void Update()
         {
-            Cube.material.color = new Color(0.8f, 0.5f, 0f, 0.15f * (Mathf.Abs((DateTime.Now.Millisecond % 2000) - 1000) / 1000f) + 0.05f);
+            var ms = DateTime.Now.Ticks / 10000;
+            Cube.material.color = ms % 1000 < 200 ? new Color(0.8f, 0.5f, 0f, 0.2f * Mathf.Abs(ms % 200 + (ms % 200 > 100 ? -200 : 0)) / 100f) : Color.clear;
 
             if (selectedFace != null)
             {

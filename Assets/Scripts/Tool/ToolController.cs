@@ -45,7 +45,7 @@ namespace Assets.Scripts.Tool
             inputActions.Game.F.performed += ctx => selectedTool?.OnF(ctx.ReadValueAsButton());
             inputActions.Game.Tab.performed += ctx => selectedTool?.OnTab(ctx.ReadValueAsButton());
             inputActions.Game.Help.performed += ctx => selectedTool?.OnToolInfo(ctx.ReadValueAsButton());
-
+            inputActions.Game.Move2.performed += ctx => selectedTool?.OnMove2(ctx.ReadValue<Vector3>());
 
 
         }

@@ -43,6 +43,13 @@ namespace Assets.Scripts.Model.BlueprintObject
                 }
             }
         }
+        public void SetColor(Color color)
+        {
+            foreach (var meshRend in gameObject.GetComponentsInChildren<MeshRenderer>())
+            {
+                meshRend.material.color = color;
+            }
+        }
 
         public void SetBlueprintPosition(Pos pos) // y and z reversed
         {
@@ -86,10 +93,15 @@ namespace Assets.Scripts.Model.BlueprintObject
             CalculateRotatedBounds();
         }
 
-        public string GetColor()
+        public string GetColorStr()
         {
             return ColorUtility.ToHtmlStringRGB(
                 gameObject.GetComponentsInChildren<MeshRenderer>()[0].material.color).ToLower();
+        }
+
+        public Color GetColor()
+        {
+            return gameObject.GetComponentsInChildren<MeshRenderer>()[0].material.color;
         }
 
         public virtual (int, int, int) GetBlueprintPosition() //fkd in joints
@@ -155,7 +167,7 @@ namespace Assets.Scripts.Model.BlueprintObject
 
             Data.Child child = new Data.Child()
             {
-                Color = this.GetColor(),
+                Color = this.GetColorStr(),
                 ShapeId = isPart ? (shape as Part).partData.Uuid : (shape as Block).blockData.Uuid,
                 Controller = this.Controller,
                 Joints = connectedJoints?.Select(

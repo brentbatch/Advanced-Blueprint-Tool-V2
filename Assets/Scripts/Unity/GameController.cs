@@ -2,13 +2,16 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Assets.Scripts.Unity.UI;
 using TMPro;
-using UnityEditor.ShortcutManagement;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor.ShortcutManagement;
+#endif
 
 namespace Assets.Scripts.Unity
 {
@@ -24,6 +27,7 @@ namespace Assets.Scripts.Unity
 
         // unity player input system : https://github.com/Unity-Technologies/InputSystem/blob/develop/Packages/com.unity.inputsystem/InputSystem/Plugins/PlayerInput/PlayerInput.cs
         public PlayerInput playerInput;
+        public BlueprintMenu blueprintMenu;
         public EscapeMenu escapeMenu;
 
         public TMP_Text hotbarTitleText;
@@ -84,17 +88,22 @@ namespace Assets.Scripts.Unity
             
             inputActions.Game.Camera.performed += ctx => { if (ctx.ReadValueAsButton()) OnCursorToggle(); };
             inputActions.Game.Escape.performed += ctx => { 
-                if (toolController.selectedTool?.OnEsc(ctx.ReadValueAsButton()) != false && ctx.ReadValueAsButton())
+                if (toolController.selectedTool?.OnEsc(ctx.ReadValueAsButton()) == true && ctx.ReadValueAsButton())
+                {
+                    escapeMenu.Toggle();
+                }
+            };
+            inputActions.UI.Escape.performed += ctx => {
+                if (toolController.selectedTool?.OnEsc(ctx.ReadValueAsButton()) == true && ctx.ReadValueAsButton())
                 {
                     escapeMenu.Toggle();
                 }
             };
 
-
             Button focusBtn = GameObject.Find("PullFocusButton").GetComponent<Button>();
             focusBtn.onClick.AddListener(() =>
             {
-                if (toolController.selectedTool?.OnFocus() != false)
+                if (toolController.selectedTool?.OnFocus() == true)
                 {
                     SetCursorState(false);
                 }
@@ -119,16 +128,14 @@ namespace Assets.Scripts.Unity
 
         public static void SetCursorState(bool cursorVisible)
         {
-            Instance.playerInput.currentActionMap = cursorVisible ? Instance.inputActions.UI.Get() : Instance.inputActions.Game.Get();
+            var newmap = cursorVisible ? Instance.inputActions.UI.Get() : Instance.inputActions.Game.Get();
+            if (Instance.playerInput.currentActionMap != newmap) Instance.playerInput.currentActionMap = newmap;
 
             IsCursorVisible = cursorVisible;
             Cursor.lockState = IsCursorVisible ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = IsCursorVisible;
             //Time.timeScale = cursorVisible ? 0 : 1;
-            if (!cursorVisible)
-            {
-                EventSystem.current.SetSelectedGameObject(null);
-            }
+            EventSystem.current.SetSelectedGameObject(null);
         }
 
 
