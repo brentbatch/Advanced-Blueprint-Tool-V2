@@ -60,6 +60,7 @@ jobs:
   buildForSupportedPlatforms:
     name: Build for ${{ matrix.targetPlatform }}
     runs-on: ubuntu-latest
+    needs: testAllModes
     strategy:
       fail-fast: false
       matrix:
@@ -92,10 +93,11 @@ jobs:
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
+          versioning: Semantic
           customImage: ${{ matrix.customImage }}
           unityVersion: ${{ matrix.unityVersion }}
           targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: ''
+          customParameters: ${{ github.ref }}
       
       # Output
       - uses: actions/upload-artifact@v2
