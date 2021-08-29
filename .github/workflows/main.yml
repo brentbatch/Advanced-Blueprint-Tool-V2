@@ -17,12 +17,11 @@ on:
   
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-  RUN_TESTS: ${{ secrets.RUN_TESTS }}
 
 jobs:
   testAllModes:
     name: Test in ${{ matrix.testMode }}
-    if: ${{ RUN_TESTS }} == 'true'
+    if: false
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
