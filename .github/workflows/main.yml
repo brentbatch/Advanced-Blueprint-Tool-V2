@@ -58,7 +58,7 @@ jobs:
 
   buildForWindows:
     name: Build for ${{ matrix.targetPlatform }}
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
@@ -89,7 +89,7 @@ jobs:
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
-          customImage: 'unityci/editor:ubuntu-2020.3.14f1-windows-mono-0.15'
+          customImage: 'unityci/editor:2020.3.14f1-windows-mono-0.15'
           unityVersion: ${{ matrix.unityVersion }}
           targetPlatform: ${{ matrix.targetPlatform }}
           # customParameters: '-myParameter myValue -myBoolean -ThirdParameter andItsValue'
