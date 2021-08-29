@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,6 +13,7 @@ namespace Assets.Scripts.Unity
     public class EscapeMenu : MonoBehaviour
     {
         public Canvas canvas { get; private set; }
+        public TMP_Text versionText;
 
         public void Awake()
         {
@@ -32,6 +34,7 @@ namespace Assets.Scripts.Unity
             Button quitBtn = menu.Find("Quit").GetComponent<Button>();
             quitBtn.onClick.AddListener(Quit);
 
+            versionText.text = Application.version;
         }
 
         public void Toggle()

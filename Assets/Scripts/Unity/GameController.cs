@@ -68,8 +68,6 @@ namespace Assets.Scripts.Unity
             else
                 throw new Exception("more than one GameController");
 
-            Debug.LogWarning("commandargs: "+string.Join(", ", Environment.GetCommandLineArgs()));
-
             inputActions = new InputActions();
             IsCursorVisible = true;
 #if UNITY_EDITOR

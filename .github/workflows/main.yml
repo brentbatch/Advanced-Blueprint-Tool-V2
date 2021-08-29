@@ -2,8 +2,8 @@ name: Build Advanced Blueprint Tools V2 - Unity project 🎮
 
 on: 
   # Triggers the workflow on push or pull request events
-  # push:
-  #   branches: [ main ]
+  push:
+    branches: [ main ]
   # pull_request:
   #   branches: [ main ]
   
@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       logLevel:
-        description: 'Log level'     
+        description: 'Log level'
         required: true
         default: 'warning'
   
@@ -77,6 +77,8 @@ jobs:
             targetPlatform: StandaloneWindows64 # Build a Windows 64-bit standalone.
           - unityVersion: 2020.3.14f1
             targetPlatform: StandaloneLinux64 # Build a Linux 64-bit standalone.
+    outputs:
+      buildVersion: ${{ steps.build_project.outputs.buildVersion }}
     steps:
       # Checkout
       - name: Checkout repository
@@ -96,6 +98,7 @@ jobs:
       
       # Build
       - name: Build project
+        id: build_project
         uses: game-ci/unity-builder@v2
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -104,7 +107,7 @@ jobs:
           customImage: ${{ matrix.customImage }}
           unityVersion: ${{ matrix.unityVersion }}
           targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: ${{ github.ref }}
+          customParameters: ''
       
       # Output
       - uses: actions/upload-artifact@v2
@@ -143,8 +146,8 @@ jobs:
           filename: StandaloneLinux64.zip
           path: Build-StandaloneLinux64
         
-      - name: Display structure of files
-        run: ls -R
+      # - name: Display structure of files
+      #   run: ls -R
   
       - name: Create Release
         id: create_release
@@ -152,8 +155,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}
+          release_name: Release ${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}
           draft: false
           prerelease: false
           
@@ -164,7 +167,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./StandaloneWindows64.zip
-          asset_name: StandaloneWindows64.zip
+          asset_name: StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
           asset_content_type: application/zip
           
       - name: Upload Release Asset - StandaloneLinux64
@@ -174,5 +177,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./StandaloneLinux64.zip
-          asset_name: StandaloneLinux64.zip
+          asset_name: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
           asset_content_type: application/zip
