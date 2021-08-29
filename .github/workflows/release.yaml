@@ -16,12 +16,12 @@ jobs:
         
       - uses: actions/download-artifact@v2
         with:
-          name: build-StandaloneWindows64
+          name: Build-StandaloneWindows64
           path: build
         
       - uses: actions/download-artifact@v2
         with:
-          name: build-StandaloneLinux64
+          name: Build-StandaloneLinux64
           path: build
         
       - name: Create Release
@@ -42,5 +42,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./build/StandaloneWindows64
-          asset_name: build-StandaloneWindows64
+          asset_name: Build-StandaloneWindows64
           asset_content_type: application/zip
