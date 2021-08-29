@@ -17,7 +17,7 @@ on:
   
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-  RUN_TESTS: ${{ secrets.RUNTESTS }}
+  RUN_TESTS: ${{ secrets.RUN_TESTS }}
 
 jobs:
   testAllModes:
