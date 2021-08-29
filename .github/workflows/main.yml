@@ -2,10 +2,15 @@ name: Build Advanced Blueprint Tools V2 - Unity project 🎮
 
 on: 
   # Triggers the workflow on push or pull request events
+  # push:
+  #   branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
+  
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -111,6 +116,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    if: ${{ !failure() }}
     needs: buildForSupportedPlatforms
     steps:
       - name: Download Build-StandaloneWindows64
