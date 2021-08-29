@@ -123,13 +123,27 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: Build-StandaloneWindows64
+          path: Build-StandaloneWindows64
         
       - name: Download Build-StandaloneLinux64
         uses: actions/download-artifact@v2
         with:
           name: Build-StandaloneLinux64
+          path: Build-StandaloneLinux64
+          
+      - name: Archive Build-StandaloneWindows64
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: StandaloneWindows64.zip
+          path: Build-StandaloneWindows64
+          
+      - name: Archive Build-StandaloneLinux64
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: StandaloneLinux64.zip
+          path: Build-StandaloneLinux64
         
-      - name: Display structure of downloaded files
+      - name: Display structure of files
         run: ls -R
   
       - name: Create Release
@@ -149,7 +163,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Build-StandaloneWindows64
+          asset_path: ./StandaloneWindows64.zip
           asset_name: StandaloneWindows64.zip
           asset_content_type: application/zip
           
@@ -159,6 +173,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./Build-StandaloneLinux64
+          asset_path: ./StandaloneLinux64.zip
           asset_name: StandaloneLinux64.zip
           asset_content_type: application/zip
