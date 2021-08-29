@@ -1,5 +1,5 @@
 using System;
-using StandaloneFileBrowserWindows;
+using StandAloneFileBrowser;
 
 namespace SFB {
 
@@ -10,7 +10,7 @@ namespace SFB {
 #if UNITY_STANDALONE_OSX
             _platformWrapper = new StandaloneFileBrowserMac();
 #elif UNITY_STANDALONE_WIN
-            _platformWrapper = new StandaloneFileBrowserWindows.StandaloneFileBrowserWindows();
+            _platformWrapper = (IStandaloneFileBrowser) new StandaloneFileBrowserWindows.StandaloneFileBrowserWindows();
 #elif UNITY_STANDALONE_LINUX
             _platformWrapper = new StandaloneFileBrowserLinux();
 #elif UNITY_EDITOR
