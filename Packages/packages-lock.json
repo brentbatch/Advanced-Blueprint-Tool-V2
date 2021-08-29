@@ -74,12 +74,6 @@
       "source": "embedded",
       "dependencies": {}
     },
-    "com.unity.nuget.system-windows-forms": {
-      "version": "file:System.Windows.Forms",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
     "com.unity.probuilder": {
       "version": "4.5.2",
       "depth": 0,
