@@ -122,12 +122,12 @@ jobs:
       - name: Download Build-StandaloneWindows64
         uses: actions/download-artifact@v2
         with:
-          name: Build-StandaloneWindows64
+          name: build/StandaloneWindows64
         
       - name: Download Build-StandaloneLinux64
         uses: actions/download-artifact@v2
         with:
-          name: Build-StandaloneLinux64
+          name: build/StandaloneLinux64
         
       - name: Create Release
         id: create_release
