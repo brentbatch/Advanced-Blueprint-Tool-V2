@@ -57,16 +57,18 @@ jobs:
           name: Test results for ${{ matrix.testMode }}
           path: ${{ steps.tests.outputs.artifactsPath }}
 
-  buildForWindows:
+  buildForSupportedPlatforms:
     name: Build for ${{ matrix.targetPlatform }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        unityVersion:
-          - 2020.3.14f1
-        targetPlatform:
-          - StandaloneWindows64 # Build a Windows 64-bit standalone.
+        include:
+          - unityVersion: 2020.3.14f1
+            customImage: 'unityci/editor:ubuntu-2020.3.14f1-windows-mono-0.15'
+            targetPlatform: StandaloneWindows64 # Build a Windows 64-bit standalone.
+          - unityVersion: 2020.3.14f1
+            targetPlatform: StandaloneLinux64 # Build a Linux 64-bit standalone.
     steps:
       # Checkout
       - name: Checkout repository
@@ -90,53 +92,10 @@ jobs:
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
-          customImage: 'unityci/editor:ubuntu-2020.3.14f1-windows-mono-0.15'
+          customImage: ${{ matrix.customImage }}
           unityVersion: ${{ matrix.unityVersion }}
           targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: '/reference:"/github/workspace/Packages/System.Windows.Forms/lib/System.Windows.Forms.dll"'
-      
-      # Output
-      - uses: actions/upload-artifact@v2
-        with:
-          name: Build-${{ matrix.targetPlatform }}
-          path: build/${{ matrix.targetPlatform }}
-
-  buildForLinux:
-    name: Build for ${{ matrix.targetPlatform }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        unityVersion:
-          - 2020.3.14f1
-        targetPlatform:
-          - StandaloneLinux64 # Build a Linux 64-bit standalone.
-    steps:
-      # Checkout
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          lfs: true
-      
-      # Cache
-      - uses: actions/cache@v2
-        with:
-          path: Library
-          key: Library--${{ matrix.targetPlatform }}
-          restore-keys: |
-            Library-${{ matrix.targetPlatform }}-
-            Library-
-      
-      # Build
-      - name: Build project
-        uses: game-ci/unity-builder@v2
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-        with:
-          unityVersion: ${{ matrix.unityVersion }}
-          targetPlatform: ${{ matrix.targetPlatform }}
-          # customParameters: '-myParameter myValue -myBoolean -ThirdParameter andItsValue'
+          customParameters: ''
       
       # Output
       - uses: actions/upload-artifact@v2
