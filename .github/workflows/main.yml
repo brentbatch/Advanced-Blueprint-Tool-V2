@@ -22,7 +22,7 @@ env:
 jobs:
   testAllModes:
     name: Test in ${{ matrix.testMode }}
-    if: ${{ secrets.RUN_TESTS }} == 'true'
+    if: ${{ RUN_TESTS }} == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
