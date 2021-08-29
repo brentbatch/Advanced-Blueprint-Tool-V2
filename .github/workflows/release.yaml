@@ -13,6 +13,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@master
+        
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-StandaloneWindows64
+          path: build
+        
+      - uses: actions/download-artifact@v2
+        with:
+          name: build-StandaloneLinux64
+          path: build
+        
       - name: Create Release
         id: create_release
         uses: actions/create-release@latest
@@ -21,8 +32,15 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: |
-            Release ${{ github.ref }}
-            Changes in this release
           draft: false
           prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/StandaloneWindows64
+          asset_name: build-StandaloneWindows64
+          asset_content_type: application/zip
