@@ -19,7 +19,7 @@ PluginImporter:
         Exclude Android: 1
         Exclude Editor: 0
         Exclude Linux: 1
-        Exclude Linux64: 1
+        Exclude Linux64: 0
         Exclude LinuxUniversal: 1
         Exclude OSXIntel: 1
         Exclude OSXIntel64: 1
@@ -27,6 +27,7 @@ PluginImporter:
         Exclude WebGL: 1
         Exclude Win: 0
         Exclude Win64: 0
+        Exclude WindowsStoreApps: 1
         Exclude iOS: 1
   - first:
       : Editor
@@ -75,9 +76,9 @@ PluginImporter:
   - first:
       Standalone: Linux64
     second:
-      enabled: 0
+      enabled: 1
       settings:
-        CPU: None
+        CPU: AnyCPU
   - first:
       Standalone: LinuxUniversal
     second:
@@ -120,6 +121,10 @@ PluginImporter:
       enabled: 0
       settings:
         CPU: AnyCPU
+        DontProcess: false
+        PlaceholderPath: 
+        SDK: AnySDK
+        ScriptingBackend: AnyScriptingBackend
   - first:
       iPhone: iOS
     second:
