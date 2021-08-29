@@ -58,7 +58,7 @@ jobs:
 
   buildForWindows:
     name: Build for ${{ matrix.targetPlatform }}
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -89,10 +89,10 @@ jobs:
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
-          customImage: 'unityci/editor:2020.3.14f1-windows-mono-0.15'
+          customImage: 'unityci/editor:ubuntu-2020.3.14f1-windows-mono-0.15'
           unityVersion: ${{ matrix.unityVersion }}
           targetPlatform: ${{ matrix.targetPlatform }}
-          # customParameters: '-myParameter myValue -myBoolean -ThirdParameter andItsValue'
+          customParameters: '/reference:"/github/workspace/Packages/System.Windows.Forms/lib/System.Windows.Forms.dll"'
       
       # Output
       - uses: actions/upload-artifact@v2
