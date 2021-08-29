@@ -56,7 +56,51 @@ jobs:
           name: Test results for ${{ matrix.testMode }}
           path: ${{ steps.tests.outputs.artifactsPath }}
 
-  buildForAllSupportedPlatforms:
+  buildForWindows:
+    name: Build for ${{ matrix.targetPlatform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        unityVersion:
+          - 2020.3.14f1
+        targetPlatform:
+          - StandaloneWindows64 # Build a Windows 64-bit standalone.
+    steps:
+      # Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          lfs: true
+      
+      # Cache
+      - uses: actions/cache@v2
+        with:
+          path: Library
+          key: Library--${{ matrix.targetPlatform }}
+          restore-keys: |
+            Library-${{ matrix.targetPlatform }}-
+            Library-
+      
+      # Build
+      - name: Build project
+        uses: game-ci/unity-builder@v2
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          customImage: 'unityci/editor:ubuntu-2020.3.14f1-windows-mono-0.15'
+          unityVersion: ${{ matrix.unityVersion }}
+          targetPlatform: ${{ matrix.targetPlatform }}
+          # customParameters: '-myParameter myValue -myBoolean -ThirdParameter andItsValue'
+      
+      # Output
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Build-${{ matrix.targetPlatform }}
+          path: build/${{ matrix.targetPlatform }}
+
+  buildForWindows:
     name: Build for ${{ matrix.targetPlatform }}
     runs-on: ubuntu-latest
     strategy:
@@ -66,7 +110,6 @@ jobs:
           - 2020.3.14f1
         targetPlatform:
           - StandaloneLinux64 # Build a Linux 64-bit standalone.
-          - StandaloneWindows64 # Build a Windows 64-bit standalone.
     steps:
       # Checkout
       - name: Checkout repository
