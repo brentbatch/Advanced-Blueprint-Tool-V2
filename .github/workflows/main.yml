@@ -35,8 +35,8 @@ jobs:
         env:
           RUN_TESTS: ${{ secrets.RUN_TESTS }}
         run: |
-          echo "run tests: ${{ env.RUN_TESTS == "true" }}"
-          echo "::set-output name=runTests::${{ env.RUN_TESTS == "true" }}"
+          echo "run tests: ${{ env.RUN_TESTS == 'true' }}"
+          echo "::set-output name=runTests::${{ env.RUN_TESTS == 'true' }}"
           
   testAllModes:
     name: Test in ${{ matrix.testMode }}
