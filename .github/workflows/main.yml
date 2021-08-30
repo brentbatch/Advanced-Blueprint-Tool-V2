@@ -25,6 +25,8 @@ env:
 
 jobs:
   checkIfDoTests:
+    name: checkIfDoTests noop
+    runs-on: ubuntu-latest
     outputs:
       doTests: ${{ secrets.RUN_TESTS }}
     steps:
