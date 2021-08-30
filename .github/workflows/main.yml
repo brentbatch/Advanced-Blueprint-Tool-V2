@@ -27,19 +27,20 @@ jobs:
   checkIfDoTests:
     name: checkIfDoTests noop
     runs-on: ubuntu-latest
-    outputs:
-      doTests: ${{ secrets.RUN_TESTS }}
     steps:
-      - name: add noop waits
-        uses: aless10/addChecks-action@v1.1
-        with:
-          checks: 0
+      - name: check RUN_TESTS var
+        run: |
+          echo ${{ secrets.RUN_TESTS }}
+          if ${{ secrets.RUN_TESTS }}; then
+            exit 0
+          fi
+          exit 1
           
   testAllModes:
     name: Test in ${{ matrix.testMode }}
     runs-on: ubuntu-latest
     needs: checkIfDoTests
-    if: ${{ needs.checkIfDoTests.outputs.doTests }} == "true"
+    if: ${{ !failure() }}
     strategy:
       fail-fast: false
       matrix:
@@ -131,7 +132,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    if: ${{ !failure() }}
+    if: ${{ success() }}
     needs: buildForSupportedPlatforms
     steps:
       - name: Download Build-StandaloneWindows64
