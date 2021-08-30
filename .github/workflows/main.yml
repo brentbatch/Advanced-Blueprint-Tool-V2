@@ -8,8 +8,8 @@ on:
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
       
-  # pull_request:
-  #   branches: [ main ]
+  pull_request:
+    branches: [ main ]
   
 
   # Allows you to run this workflow manually from the Actions tab
@@ -22,11 +22,12 @@ on:
   
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+  RUN_TESTS: ${{ secrets.RUN_TESTS }}
 
 jobs:
   testAllModes:
     name: Test in ${{ matrix.testMode }}
-    if: false
+    if: ${{ env.RUN_TESTS }} != "true"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -137,13 +138,13 @@ jobs:
       - name: Archive Build-StandaloneWindows64
         uses: thedoctor0/zip-release@master
         with:
-          filename: StandaloneWindows64.zip
+          filename: StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
           path: Build-StandaloneWindows64
           
       - name: Archive Build-StandaloneLinux64
         uses: thedoctor0/zip-release@master
         with:
-          filename: StandaloneLinux64.zip
+          filename: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
           path: Build-StandaloneLinux64
         
       # - name: Display structure of files
@@ -157,25 +158,27 @@ jobs:
         with:
           tag_name: ${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}
           release_name: Release ${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}
+          artifacts: "StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip,StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip"
+          artifactErrorsFailBuild: true
           draft: false
           prerelease: false
           
-      - name: Upload Release Asset - StandaloneWindows64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./StandaloneWindows64.zip
-          asset_name: StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
-          asset_content_type: application/zip
-          
-      - name: Upload Release Asset - StandaloneLinux64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./StandaloneLinux64.zip
-          asset_name: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
-          asset_content_type: application/zip
+      # - name: Upload Release Asset - StandaloneWindows64
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: ./StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+      #     asset_name: StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+      #     asset_content_type: application/zip
+      #     
+      # - name: Upload Release Asset - StandaloneLinux64
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: ./StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+      #     asset_name: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+      #     asset_content_type: application/zip
