@@ -18,7 +18,7 @@ on:
   
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-  RUNTESTS: ${{ secrets.RUN_TESTS != '' }}
+  RUNTESTS: ${{ secrets.RUN_TESTS == 'true' }}
 
 jobs:
   testAllModes:
@@ -32,7 +32,7 @@ jobs:
           - editmode
     steps:
       - uses: actions/checkout@v2
-        if: env.RUNTESTS == 'true'
+        if: env.RUNTESTS
         with:
           lfs: true
       
