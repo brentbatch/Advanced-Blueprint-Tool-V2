@@ -27,6 +27,8 @@ env:
 jobs:
   testAllModes:
     name: Test in ${{ matrix.testMode }}
+    env: 
+      RUN_TESTS: ${{ secrets.RUN_TESTS }}
     if: env.RUN_TESTS != "true"
     runs-on: ubuntu-latest
     strategy:
