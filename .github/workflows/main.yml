@@ -18,27 +18,12 @@ on:
   
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+  RUNTESTS: ${{ secrets.RUN_TESTS != '' }}
 
 jobs:
-  checkIfDoTests:
-    name: check secrets.RUN_TESTS
-    runs-on: ubuntu-latest
-    outputs:
-      runTests: ${{ steps.runTests.outputs.runTests }}
-    steps:
-      - name: check whether tests should be run
-        id: runTests
-        env:
-          RUNTESTS: ${{ secrets.RUN_TESTS }}
-        run: |
-          echo "run tests: ${{ env.RUNTESTS != '' }}"
-          echo "::set-output name=runTests::${{ env.RUNTESTS != '' }}"
-          
   testAllModes:
     name: Test in ${{ matrix.testMode }}
     runs-on: ubuntu-latest
-    needs: checkIfDoTests
-    if: needs.checkIfDoTests.outputs.runTests
     strategy:
       fail-fast: false
       matrix:
@@ -47,10 +32,12 @@ jobs:
           - editmode
     steps:
       - uses: actions/checkout@v2
+        if: env.RUNTESTS
         with:
           lfs: true
       
       - uses: actions/cache@v2
+        if: env.RUNTESTS
         with:
           path: Library
           key: Library-
@@ -58,6 +45,7 @@ jobs:
             Library-
       
       - uses: game-ci/unity-test-runner@v2
+        if: env.RUNTESTS
         id: tests
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -68,7 +56,7 @@ jobs:
           checkName: ${{ matrix.testMode }} Test Results
       
       - uses: actions/upload-artifact@v2
-        if: always()
+        if: env.RUNTESTS && always()
         with:
           name: Test results for ${{ matrix.testMode }}
           path: ${{ steps.tests.outputs.artifactsPath }}
