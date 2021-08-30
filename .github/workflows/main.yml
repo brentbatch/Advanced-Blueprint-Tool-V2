@@ -3,7 +3,7 @@ name: Build Advanced Blueprint Tools V2 - Unity project 🎮
 on: 
   # Triggers the workflow on push or pull request events
   push:
-    branches: [ main ]
+    # branches: [ main ]
     # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
@@ -32,7 +32,7 @@ jobs:
           - editmode
     steps:
       - uses: actions/checkout@v2
-        if: env.RUNTESTS
+        if: env.RUNTESTS == 'true'
         with:
           lfs: true
       
