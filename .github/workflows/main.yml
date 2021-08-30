@@ -23,10 +23,26 @@ on:
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 
-jobs:          
+jobs:
+  checkIfDoTests:
+    name: check secrets.RUN_TESTS
+    runs-on: ubuntu-latest
+    outputs:
+      runTests: ${{ steps.runTests.outputs.runTests }}
+    steps:
+      - name: check whether tests should be run
+        id: runTests
+        env:
+          RUN_TESTS: ${{ secrets.RUN_TESTS }}
+        run: |
+          echo "run tests: ${{ env.RUN_TESTS == "true" }}"
+          echo "::set-output name=runTests::${{ env.RUN_TESTS == "true" }}"
+          
   testAllModes:
     name: Test in ${{ matrix.testMode }}
     runs-on: ubuntu-latest
+    needs: checkIfDoTests
+    if: needs.checkIfDoTests.outputs.runTests == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -34,12 +50,6 @@ jobs:
           - playmode
           - editmode
     steps:
-      - name: exit with success if tests don't have to be run
-        run: |
-          if ${{ secrets.RUN_TESTS }} != "true"; then
-            exit 0
-          fi
-          
       - uses: actions/checkout@v2
         with:
           lfs: true
