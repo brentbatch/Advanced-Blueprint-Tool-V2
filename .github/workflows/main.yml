@@ -78,7 +78,7 @@ jobs:
           - unityVersion: 2020.3.14f1
             targetPlatform: StandaloneLinux64 # Build a Linux 64-bit standalone.
     outputs:
-      buildVersion: ${{ steps.build_project.outputs.buildVersion }}
+      buildVersion: v${{ steps.build_project.outputs.buildVersion }}
     steps:
       # Checkout
       - name: Checkout repository
