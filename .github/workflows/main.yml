@@ -24,11 +24,13 @@ env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
 
 jobs:
+  checkIfDoTests:
+    outputs:
+      doTests: ${{ secrets.RUN_TESTS }}
+
   testAllModes:
     name: Test in ${{ matrix.testMode }}
-    with: 
-      RUN_TESTS: ${{ secrets.RUN_TESTS }}
-    if: INPUT_RUN_TESTS != "true"
+    if: ${{ needs.checkIfDoTests.outputs.doTests }} != "true"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
