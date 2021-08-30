@@ -37,7 +37,7 @@ jobs:
           
   testAllModes:
     name: Test in ${{ matrix.testMode }}
-    if: ${{ needs.checkIfDoTests.outputs.doTests }} != "true"
+    if: ${{ needs.checkIfDoTests.outputs.doTests }} == "true"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
