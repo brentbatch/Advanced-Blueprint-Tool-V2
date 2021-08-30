@@ -32,12 +32,12 @@ jobs:
           - editmode
     steps:
       - uses: actions/checkout@v2
-        if: env.RUNTESTS
+        if: env.RUNTESTS == 'true'
         with:
           lfs: true
       
       - uses: actions/cache@v2
-        if: env.RUNTESTS
+        if: env.RUNTESTS == 'true'
         with:
           path: Library
           key: Library-
@@ -45,7 +45,7 @@ jobs:
             Library-
       
       - uses: game-ci/unity-test-runner@v2
-        if: env.RUNTESTS
+        if: env.RUNTESTS == 'true'
         id: tests
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -56,7 +56,7 @@ jobs:
           checkName: ${{ matrix.testMode }} Test Results
       
       - uses: actions/upload-artifact@v2
-        if: env.RUNTESTS && always()
+        if: env.RUNTESTS == 'true' && always()
         with:
           name: Test results for ${{ matrix.testMode }}
           path: ${{ steps.tests.outputs.artifactsPath }}
