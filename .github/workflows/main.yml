@@ -22,14 +22,13 @@ on:
   
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-  RUN_TESTS: ${{ secrets.RUN_TESTS }}
 
 jobs:
   testAllModes:
     name: Test in ${{ matrix.testMode }}
-    env: 
+    with: 
       RUN_TESTS: ${{ secrets.RUN_TESTS }}
-    if: env.RUN_TESTS != "true"
+    if: INPUT_RUN_TESTS != "true"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
