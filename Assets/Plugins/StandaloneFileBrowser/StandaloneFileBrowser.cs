@@ -1,15 +1,7 @@
 using System;
+using StandAloneFileBrowser;
 
 namespace SFB {
-    public struct ExtensionFilter {
-        public string Name;
-        public string[] Extensions;
-
-        public ExtensionFilter(string filterName, params string[] filterExtensions) {
-            Name = filterName;
-            Extensions = filterExtensions;
-        }
-    }
 
     public class StandaloneFileBrowser {
         private static IStandaloneFileBrowser _platformWrapper = null;
@@ -18,7 +10,7 @@ namespace SFB {
 #if UNITY_STANDALONE_OSX
             _platformWrapper = new StandaloneFileBrowserMac();
 #elif UNITY_STANDALONE_WIN
-            _platformWrapper = new StandaloneFileBrowserWindows();
+            _platformWrapper = (IStandaloneFileBrowser) new StandaloneFileBrowserWindows.StandaloneFileBrowserWindows();
 #elif UNITY_STANDALONE_LINUX
             _platformWrapper = new StandaloneFileBrowserLinux();
 #elif UNITY_EDITOR

@@ -1,12 +1,13 @@
-#if UNITY_STANDALONE_WIN
-
+#if UNITY_STANDALONE_WIN && false
 using System;
 using System.IO;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using Ookii.Dialogs;
+using StandAloneFileBrowser;
 
-namespace SFB {
+namespace StandaloneFileBrowserWindows
+{
     // For fullscreen support
     // - WindowWrapper class and GetActiveWindow() are required for modal file dialog.
     // - "PlayerSettings/Visible In Background" should be enabled, otherwise when file dialog opened app window minimizes automatically.
@@ -133,5 +134,6 @@ namespace SFB {
         }
     }
 }
+
 
 #endif
