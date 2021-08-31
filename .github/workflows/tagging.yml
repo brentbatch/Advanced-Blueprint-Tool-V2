@@ -28,7 +28,7 @@ jobs:
         RELEASE_BRANCHES: main,release
         DEFAULT_BUMP: patch
         VERBOSE: false
-		
+
     - name: echo
       run: |
         echo 'Old tag: ${{ steps.tag.outputs.new_tag }}'
