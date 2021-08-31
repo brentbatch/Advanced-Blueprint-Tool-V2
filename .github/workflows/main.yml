@@ -180,6 +180,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+          asset_path: ./StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.tar.gz
           asset_name: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.tar.gz
           asset_content_type: application/zip
