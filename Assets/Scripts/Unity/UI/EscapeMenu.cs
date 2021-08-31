@@ -34,7 +34,7 @@ namespace Assets.Scripts.Unity
             Button quitBtn = menu.Find("Quit").GetComponent<Button>();
             quitBtn.onClick.AddListener(Quit);
 
-            versionText.text = Application.version;
+            versionText.text = "v"+Application.version;
         }
 
         public void Toggle()

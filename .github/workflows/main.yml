@@ -140,13 +140,14 @@ jobs:
           path: Build-StandaloneWindows64
           
       - name: Archive Build-StandaloneLinux64
-        uses: thedoctor0/zip-release@master
-        with:
-          filename: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
-          path: Build-StandaloneLinux64
+        run: tar -czf StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.tar.gz Build-StandaloneLinux64
+        # uses: thedoctor0/zip-release@master
+        # with:
+        #   filename: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+        #   path: Build-StandaloneLinux64
         
-      # - name: Display structure of files
-      #   run: ls -R
+      - name: Display structure of files
+        run: ls -R
   
       - name: Create Release
         id: create_release
@@ -155,10 +156,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}
-          release_name: Release ${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}
-          artifacts: "./StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip,./StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip"
-          artifactErrorsFailBuild: true
-          artifactContentType: zip
+          release_name: ${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}
+          # artifacts: "./StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip,./StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.tar.gz" # doesn't work
+          # artifactErrorsFailBuild: true
+          # artifactContentType: zip
           draft: false
           prerelease: false
           allowUpdates: true
@@ -180,5 +181,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
-          asset_name: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+          asset_name: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.tar.gz
           asset_content_type: application/zip
