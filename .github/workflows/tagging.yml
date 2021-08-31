@@ -8,19 +8,21 @@ on:
         description: 'Log level'
         required: true
         default: 'warning'
+        
 jobs:
-  build:
-    name: Bump tag
+  createTag:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Create an incremental release
-      uses: aurestic/incrementarl-create-release@master
-      with:
-        flag_branch: true
-        message: Bump version
-        prev_tag: 'v'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout  
+        uses: actions/checkout@v2  
+        with:  
+            fetch-depth: 0  
+            
+      - name: Version  
+        id: version  
+        uses: juliansangillo/tag-version@v1  
+        with:  
+            production-branch: main  
+            # test-branch: test
+            dev-branch: development
+            
