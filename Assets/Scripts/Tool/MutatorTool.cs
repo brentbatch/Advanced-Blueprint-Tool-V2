@@ -330,6 +330,7 @@ namespace Assets.Scripts.Tool
         private void UnEquipColorFunction()
         {
             moveGizmo.SetActive(false);
+            ColorPicker.Cancel();
             // hide ui
         }
 
