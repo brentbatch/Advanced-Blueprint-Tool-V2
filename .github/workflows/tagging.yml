@@ -20,16 +20,16 @@ jobs:
       with:
         fetch-depth: '0'
     - name: Bump version and push tag
-	  id: bump_tag
+       id: bump_tag
       uses: anothrNick/github-tag-action@1.26.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         WITH_V: true
-		RELEASE_BRANCHES: main,release
-		DEFAULT_BUMP: patch
-		VERBOSE: false
+        RELEASE_BRANCHES: main,release
+        DEFAULT_BUMP: patch
+        VERBOSE: false
 		
     - name: echo
       run: |
-	    echo 'Old tag: ${{ steps.tag.outputs.new_tag }}'
-	    echo 'New tag: ${{ steps.bump_tag.outputs.new_tag }}'
+        echo 'Old tag: ${{ steps.tag.outputs.new_tag }}'
+        echo 'New tag: ${{ steps.bump_tag.outputs.new_tag }}'
