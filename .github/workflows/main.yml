@@ -6,7 +6,7 @@ on:
     # branches: [ main ]
     # Sequence of patterns matched against refs/tags
     tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+    - '*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -156,10 +156,12 @@ jobs:
         with:
           tag_name: ${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}
           release_name: Release ${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}
-          artifacts: "StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip,StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip"
+          artifacts: "./StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip,./StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip"
           artifactErrorsFailBuild: true
+          artifactContentType: zip
           draft: false
           prerelease: false
+          allowUpdates: true
           
       - name: Upload Release Asset - StandaloneWindows64
         uses: actions/upload-release-asset@v1
