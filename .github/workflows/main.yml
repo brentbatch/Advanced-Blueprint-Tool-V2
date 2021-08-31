@@ -161,22 +161,22 @@ jobs:
           draft: false
           prerelease: false
           
-      # - name: Upload Release Asset - StandaloneWindows64
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: ./StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
-      #     asset_name: StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
-      #     asset_content_type: application/zip
-      #     
-      # - name: Upload Release Asset - StandaloneLinux64
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: ./StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
-      #     asset_name: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
-      #     asset_content_type: application/zip
+      - name: Upload Release Asset - StandaloneWindows64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+          asset_name: StandaloneWindows64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+          asset_content_type: application/zip
+          
+      - name: Upload Release Asset - StandaloneLinux64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+          asset_name: StandaloneLinux64-${{ needs.buildForSupportedPlatforms.outputs.buildVersion }}.zip
+          asset_content_type: application/zip
