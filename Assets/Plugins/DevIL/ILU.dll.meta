@@ -6,7 +6,7 @@ PluginImporter:
   iconMap: {}
   executionOrder: {}
   defineConstraints: []
-  isPreloaded: 0
+  isPreloaded: 1
   isOverridable: 0
   isExplicitlyReferenced: 0
   validateReferences: 1
@@ -23,6 +23,7 @@ PluginImporter:
         Exclude WebGL: 0
         Exclude Win: 1
         Exclude Win64: 0
+        Exclude WindowsStoreApps: 0
   - first:
       Android: Android
     second:
@@ -71,6 +72,16 @@ PluginImporter:
     second:
       enabled: 1
       settings: {}
+  - first:
+      Windows Store Apps: WindowsStoreApps
+    second:
+      enabled: 1
+      settings:
+        CPU: AnyCPU
+        DontProcess: false
+        PlaceholderPath: 
+        SDK: AnySDK
+        ScriptingBackend: AnyScriptingBackend
   userData: 
   assetBundleName: 
   assetBundleVariant: 
