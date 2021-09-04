@@ -179,6 +179,9 @@ namespace Assets.Scripts.Model.Data
 
         [JsonProperty("speed")]
         public int? Speed { get; set; } // joint (piston)
+
+        [JsonProperty("level")]
+        public int? Level { get; set; } // thruster level
     }
 
     [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
