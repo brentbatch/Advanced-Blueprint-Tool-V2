@@ -33,3 +33,9 @@ jobs:
       run: |
         echo 'Old tag: ${{ steps.tag.outputs.new_tag }}'
         echo 'New tag: ${{ steps.bump_tag.outputs.new_tag }}'
+        
+    - name: Dispatch build
+      uses: peter-evans/repository-dispatch@v1
+      with:
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        event-type: do_build
