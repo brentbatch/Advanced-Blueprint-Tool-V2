@@ -1,7 +1,7 @@
 #if UNITY_EDITOR
 
 using System;
-using StandaloneFileBrowserWindows;
+using StandAloneFileBrowser;
 using UnityEditor;
 
 namespace SFB {
