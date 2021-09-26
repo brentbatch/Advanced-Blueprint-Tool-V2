@@ -168,6 +168,12 @@ namespace Assets.Scripts.Resolver
                 // find steam folder
                 steamInstallationPath = Registry.GetValue(@"HKEY_CURRENT_USER\SOFTWARE\Valve\Steam", "SteamPath", "").ToString().Replace('/', Path.DirectorySeparatorChar);
 
+                if (string.IsNullOrEmpty(steamInstallationPath))
+                {
+                    // maybe proton on linux is running this tool?
+                    steamInstallationPath = Path.Combine(Environment.GetEnvironmentVariable("HOME") ?? ".", ".steam", "steam");
+                }
+
                 if (!string.IsNullOrEmpty(steamInstallationPath))
                 {
                     // could use this to load persona name:
@@ -179,6 +185,8 @@ namespace Assets.Scripts.Resolver
                 if (Directory.Exists(steamApps))
                 {
                     this.workShopPath = Path.Combine(steamApps, "workshop", "content", "387990");
+                    if (!Directory.Exists(workShopPath)) // linux?
+                        this.workShopPath = Path.Combine(steamApps, "compatdata", "387990");
 
                     string scrapMechanicPath = Path.Combine(steamApps, "common", "Scrap Mechanic");
                     if (IsScrapMechanicPath(scrapMechanicPath))
@@ -199,11 +207,9 @@ namespace Assets.Scripts.Resolver
                                 if (IsScrapMechanicPath(scrapMechanicPath))
                                 {
                                     this.scrapMechanicPath = scrapMechanicPath;
-                                    this.workShopPath = Path.Combine(
-                                        Directory.GetParent(
-                                            Directory.GetParent(
-                                                this.scrapMechanicPath).FullName).FullName,
-                                        "workshop", "content", "387990");
+                                    this.workShopPath = Path.Combine(library, "steamapps", "workshop", "content", "387990");
+                                    if (!Directory.Exists(workShopPath)) // linux?
+                                        this.workShopPath = Path.Combine(library, "steamapps", "compatdata", "387990");
                                     break;
                                 }
                             }
