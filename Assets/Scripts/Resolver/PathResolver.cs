@@ -148,6 +148,10 @@ namespace Assets.Scripts.Resolver
                 {
                     string[] paths = StandaloneFileBrowser.OpenFolderPanel("Please select your Scrap Mechanic USER_ directory", Environment.CurrentDirectory, false);
                     string path = paths?.FirstOrDefault();
+
+                    if (string.IsNullOrWhiteSpace(path))
+                        Application.Quit();
+
                     if (!string.IsNullOrEmpty(path) && Directory.Exists(Path.Combine(path, "Save")) && Directory.Exists(Path.Combine(path, "Blueprints")))
                     {
                         scrapMechanicAppdataUserPath = path;
@@ -231,6 +235,9 @@ namespace Assets.Scripts.Resolver
                 string[] paths = StandaloneFileBrowser.OpenFolderPanel("Please select the Scrap Mechanic folder", openFolder, false);
                 string path = paths.FirstOrDefault();
 
+                if (string.IsNullOrWhiteSpace(path))
+                    Application.Quit();
+
                 if (!IsScrapMechanicPath(path))
                     continue;
 
@@ -247,9 +254,14 @@ namespace Assets.Scripts.Resolver
             while (!Directory.Exists(this.workShopPath))
             {
                 string[] paths = StandaloneFileBrowser.OpenFolderPanel("Please select the Workshop folder containing workshop blueprints", openFolder, false);
-                if (!string.IsNullOrEmpty(paths?.FirstOrDefault()))
+                string path = paths?.FirstOrDefault();
+
+                if (string.IsNullOrWhiteSpace(path))
+                    Application.Quit();
+
+                if (!string.IsNullOrEmpty(path))
                 {
-                    this.workShopPath = paths?.FirstOrDefault();
+                    this.workShopPath = path;
                 }
             }
         }
