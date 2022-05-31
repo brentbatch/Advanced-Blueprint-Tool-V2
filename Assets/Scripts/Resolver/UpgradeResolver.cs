@@ -15,7 +15,10 @@ namespace Assets.Scripts.Resolver
             UpgradeResourcesData upgradeData = JsonConvert.DeserializeObject<UpgradeResourcesData>(File.ReadAllText(upgradeResourcesFile));
             foreach(var upgrade in upgradeData.Upgrade.SelectMany(listlist => listlist))
             {
-                UpgradeResources.Add(upgrade[0], upgrade[1]);
+                if (!UpgradeResources.ContainsKey(upgrade[0]))
+                    UpgradeResources.Add(upgrade[0], upgrade[1]);
+                else
+                    UpgradeResources[upgrade[0]] = upgrade[1];
             }
         }
 
